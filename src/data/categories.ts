@@ -7,11 +7,9 @@ export interface Category {
 }
 
 export const CATEGORIES: Category[] = [
-  { id: 'hair-chair', name: 'Hair Chairs', icon: '💺', description: 'Hair styling chairs and stations', equipmentExamples: ['Hydraulic styling chair', 'Barber chair', 'Wash station', 'Mirror station'] },
-  { id: 'nail-station', name: 'Nail Stations', icon: '💅', description: 'Manicure tables and pedicure chairs', equipmentExamples: ['Manicure table', 'Pedicure chair', 'UV/LED lamp', 'Nail art station'] },
-  { id: 'tattoo-bed', name: 'Tattoo Beds', icon: '🖊️', description: 'Tattoo chairs and beds', equipmentExamples: ['Tattoo bed', 'Adjustable chair', 'Artist station', 'Privacy screen'] },
-  { id: 'massage-bed', name: 'Massage Beds', icon: '🧘', description: 'Massage tables and facial beds', equipmentExamples: ['Massage table', 'Facial bed', 'Heated table', 'Zero gravity bed'] },
-  { id: 'salon-room', name: 'Salon Rooms', icon: '🚪', description: 'Complete salon spaces and rooms', equipmentExamples: ['Private treatment room', 'Color bar', 'Waiting area', 'Reception desk'] },
+  { id: 'hair', name: 'Hair Services', icon: '✨', description: 'Hair styling and beauty services', equipmentExamples: ['Hair styling', 'Color treatments', 'Cuts and trims', 'Hair extensions'] },
+  { id: 'nail', name: 'Nail Services', icon: '💅', description: 'Manicure and pedicure services', equipmentExamples: ['Manicure', 'Pedicure', 'Nail art', 'Gel nails'] },
+  { id: 'tattoo', name: 'Tattoo Services', icon: '🖊️', description: 'Tattoo and body art services', equipmentExamples: ['Custom tattoos', 'Cover-ups', 'Flash designs', 'Body art'] },
 ];
 
 export const CELL_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'];

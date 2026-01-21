@@ -126,11 +126,15 @@ export default function App() {
             
             // Clean up old elements with numeric IDs or invalid categories
             const validCategories = ['hair', 'nail', 'tattoo'];
-            const cleanedElements = localElements.filter((e: any) => 
-              e.id && 
-              e.id.includes('-') && 
-              validCategories.includes(e.category)
-            );
+            const cleanedElements = localElements.filter((e: any) =>
+              e.id &&
+              e.id.includes('-') &&
+              validCategories.includes(e.category) &&
+              e.name && e.prompt
+            ).map((e: any) => ({
+              ...e,
+              category: e.category.replace('-chair', '').replace('-station', '').replace('-bed', '').replace('-room', ''),
+            }));
             
             if (cleanedElements.length !== localElements.length) {
               console.log(`Cleaned ${localElements.length - cleanedElements.length} invalid elements`);
