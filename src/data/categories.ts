@@ -54,175 +54,129 @@ export interface PromptTemplate {
 
 export const PROMPT_TEMPLATES: Record<string, PromptTemplate> = {
   'hair-chair': {
-    subject: "Professional hydraulic salon styling chair",
-    environment: "Modern hair salon interior with ambient lighting",
-    lighting: {
-      type: "soft studio lighting mixed with natural window light",
-      quality: "diffused, warm color temperature",
-      direction: "upper-left diagonal"
-    },
+    subject: "Woman getting hair service at salon station, face visible, confident expression, commercial beauty shot",
+    shot_type: "medium close-up",
     camera: {
-      focal_length_mm: 50,
-      aperture_f: 2.8,
-      lens_type: "prime",
-      focus_strategy: "sharp on chair details, slightly blurred background"
+      film_stock: "Kodak Portra 400",
+      camera: "Canon R5 with 85mm prime lens",
+      lens: "85mm f/1.4",
+      aperture: "f/2.0",
+      focus: "eyes sharp"
     },
-    materials_and_texture: {
-      primary_materials: ["premium leather", "polished chrome", "stainless steel"],
-      surface_finish: "smooth, reflective",
-      texture_notes: "visible stitching, chrome shine, elegant hardware"
+    lighting: {
+      type: "soft key light from 45 degrees",
+      modifier: "large softbox with diffusion"
     },
-    style: "product photography, photorealistic, professional studio lighting",
-    mood: ["professional", "elegant", "modern", "clean"],
+    style: "editorial beauty photography, clean magazine style, commercial advertising",
+    mood: "polished, professional, aspirational",
     composition: {
-      framing: "vertical",
-      angle: "slightly low angle to show chair profile",
-      background: "salon interior with mirrors, neutral tones"
+      shot_type: "medium close-up",
+      framing: "head and shoulders",
+      angle: "slightly above eye level"
     },
-    color_palette: ["warm beige", "cream white", "chrome silver", "soft grey"],
-    resolution: "4K",
-    output_style: "commercial product photography, Amazon/Shopify listing quality"
+    color_tone: "warm skin tones, natural yet enhanced",
+    negative_prompt: "cartoon, illustration, distorted, ugly, bad anatomy"
   },
   'nail-station': {
-    subject: "Professional manicure table with UV/LED lamp",
-    environment: "Modern nail salon workspace",
-    lighting: {
-      type: "softbox lighting",
-      direction: "frontal",
-      quality: "diffused, even illumination",
-      color_temperature: "neutral-white"
-    },
+    subject: "Hands receiving manicure treatment, close-up of nails being painted, professional salon setting",
+    shot_type: "extreme close-up",
     camera: {
-      focal_length_mm: 35,
-      aperture_f: 4.0,
-      lens_type: "wide-angle prime",
-      distance_descriptor: "product shot"
+      film_stock: "Kodak Gold 200",
+      camera: "Sony A7IV with 100mm macro lens",
+      lens: "100mm f/2.8 macro",
+      aperture: "f/4.0",
+      focus: "fingernails"
     },
-    materials_and_texture: {
-      primary_materials: ["acrylic surface", "powder-coated metal", "glass", "LED lights"],
-      surface_finish: "matte acrylic, glossy accents",
-      texture_notes: "clean surfaces, organized tools, subtle reflections"
+    lighting: {
+      type: "ring light directly overhead",
+      modifier: "even illumination"
     },
-    style: "product photography, lifestyle aesthetic, clean workspace",
-    mood: ["relaxing", "professional", "inviting", "spacious"],
+    style: "product beauty photography, clean commercial, Instagram ad quality",
+    mood: "clean, luxurious, attention-grabbing",
     composition: {
-      framing: "horizontal",
-      arrangement_notes: "nail polish bottles, tools, lamp in frame",
-      negative_space: "balanced for text overlay"
+      shot_type: "extreme close-up",
+      framing: "hands only",
+      angle: "top down"
     },
-    color_palette: ["soft pink", "rose gold", "white", "light grey"],
-    resolution: "4K",
-    output_style: "e-commerce product image, lifestyle photography"
+    color_tone: "vibrant nail colors, warm skin tones",
+    negative_prompt: "cartoon, illustration, blurry, deformed hands"
   },
   'tattoo-bed': {
-    subject: "Adjustable tattoo bed/chair with headrest and armrests",
-    environment: "Professional tattoo studio workspace",
-    lighting: {
-      type: "studio lighting with spot accents",
-      direction: "top-down and side fill",
-      quality: "high contrast, dramatic shadows",
-      color_temperature: "neutral-cool"
-    },
+    subject: "Person getting tattoo work done, focused artist in background, tattoo machine visible",
+    shot_type: "medium shot",
     camera: {
-      focal_length_mm: 85,
-      aperture_f: 2.8,
-      lens_type: "portrait prime",
-      focus_strategy: "sharp on bed details"
+      film_stock: "Kodak Tri-X 400",
+      camera: "Leica Q2 with 28mm fixed lens",
+      lens: "28mm f/1.7",
+      aperture: "f/2.8",
+      focus: "tattoo area"
     },
-    materials_and_texture: {
-      primary_materials: ["vinyl upholstery", "powder-coated steel", "chrome hardware"],
-      surface_finish: "matte vinyl, chrome highlights",
-      texture_notes: "upholstery grain, metal shine, sturdy construction"
+    lighting: {
+      type: "overhood lamp directly on work area",
+      modifier: "bright task lighting with ambient fill"
     },
-    style: "professional photography, studio equipment catalog",
-    mood: ["professional", "artistic", "clean", "sterile"],
+    style: "documentary street photography aesthetic, raw authentic, indie magazine",
+    mood: "intense, focused, artistic, underground",
     composition: {
-      framing: "vertical",
-      angle: "3/4 view showing adjustability",
-      background: "tattoo flash art on walls, organized station"
+      shot_type: "medium shot",
+      framing: "torso to show work in progress",
+      angle: "eye level"
     },
-    color_palette: ["black", "grey", "chrome silver", "accent colors"],
-    resolution: "4K",
-    output_style: "medical equipment photography, studio catalog"
+    color_tone: "high contrast, desaturated slightly, film grain",
+    negative_prompt: "studio lighting, polished, commercial, happy"
   },
   'massage-bed': {
-    subject: "Professional massage table with adjustable headrest",
-    environment: "Spa treatment room with zen atmosphere",
-    lighting: {
-      type: "soft ambient lighting with warm glow",
-      direction: "diffused overhead",
-      quality: "low contrast, warm and inviting",
-      color_temperature: "warm tungsten"
-    },
+    subject: "Person receiving spa massage, face down on massage table, serene relaxed state",
+    shot_type: "medium shot",
     camera: {
-      focal_length_mm: 50,
-      aperture_f: 2.8,
-      lens_type: "standard prime",
-      focus_strategy: "edge-to-edge sharp"
+      film_stock: "Fuji Pro 400H",
+      camera: "Hasselblad X2D with 45mm lens",
+      lens: "45mm f/3.5",
+      aperture: "f/4.0",
+      focus: "shoulders and back"
     },
-    materials_and_texture: {
-      primary_materials: ["PU leather", "memory foam padding", "aluminum frame"],
-      surface_finish: "smooth leather, brushed aluminum",
-      texture_notes: "leather grain, pillow softness, clean lines"
+    lighting: {
+      type: "soft diffused window light from side",
+      modifier: "sheer curtains, natural falloff"
     },
-    style: "wellness product photography, spa lifestyle",
-    mood: ["peaceful", "relaxing", "luxurious", "serene"],
+    style: "wellness lifestyle photography, calm peaceful, high-end spa editorial",
+    mood: "tranquil, restorative, serene, peaceful",
     composition: {
-      framing: "horizontal",
-      angle: "slightly elevated perspective",
-      background: "calming spa colors, plants, soft textures"
+      shot_type: "medium shot",
+      framing: "upper body",
+      angle: "slightly elevated, looking down"
     },
-    color_palette: ["earth tones", "warm beige", "soft white", "natural green accents"],
-    resolution: "4K",
-    output_style: "hospitality product photography, spa catalog"
+    color_tone: "soft, warm, ethereal, skin glow",
+    negative_prompt: "cartoon, illustration, harsh lighting, stressed"
   },
   'salon-room': {
-    subject: "Complete modern salon interior with multiple stations",
-    environment: "Professional beauty salon space",
-    lighting: {
-      type: "multiple light sources - ambient, task, accent",
-      quality: "balanced, layered lighting design",
-      color_temperature: "neutral white with warm accents"
-    },
+    subject: "Salon interior with stylist working on client, activity in progress, busy professional environment",
+    shot_type: "wide shot",
     camera: {
-      focal_length_mm: 24,
-      aperture_f: 5.6,
-      lens_type: "wide-angle",
-      distance_descriptor: "wide interior shot"
+      film_stock: "Kodak Ektar 100",
+      camera: "Nikon Z8 with 24-70mm zoom",
+      lens: "35mm f/2.8",
+      aperture: "f/5.6",
+      focus: "center of activity"
     },
-    materials_and_texture: {
-      primary_materials: ["hardwood flooring", "mirrored surfaces", "modern furniture", "glass fixtures"],
-      surface_finish: "polished, clean, premium"
+    lighting: {
+      type: "salon practical lights and ambient",
+      modifier: "mix of sources, natural window fill"
     },
-    style: "interior design photography, architectural visualization",
-    mood: ["welcoming", "modern", "professional", "spacious"],
+    style: "lifestyle documentary photography, authentic busy salon, commercial advertising",
+    mood: "vibrant, professional, welcoming, dynamic",
     composition: {
-      framing: "wide horizontal",
-      arrangement_notes: "multiple stations visible, balanced layout",
-      depth: "deep perspective showing full space"
+      shot_type: "wide shot",
+      framing: "full room showing multiple stations",
+      angle: "corner perspective"
     },
-    color_palette: ["neutral base", "brand accent colors", "natural tones", "modern greys"],
-    resolution: "4K",
-    output_style: "commercial interior photography, portfolio showcase"
+    color_tone: "rich, warm, inviting colors",
+    negative_prompt: "empty salon, no people, staged, still"
   }
 };
 
 export function formatPromptFromTemplate(template: PromptTemplate): string {
-  const parts = [
-    `Subject: ${template.subject}`,
-    `Environment: ${template.environment}`,
-    `Lighting: ${template.lighting.type}${template.lighting.quality ? `, ${template.lighting.quality}` : ''}${template.lighting.direction ? `, ${template.lighting.direction}` : ''}`,
-    `Camera: ${template.camera.focal_length_mm}mm f/${template.camera.aperture_f} ${template.camera.lens_type}${template.camera.focus_strategy ? `, ${template.camera.focus_strategy}` : ''}`,
-    `Materials: ${template.materials_and_texture.primary_materials.join(', ')}, ${template.materials_and_texture.surface_finish}`,
-    `Texture: ${template.materials_and_texture.texture_notes}`,
-    `Style: ${template.style}`,
-    `Mood: ${template.mood.join(', ')}`,
-    `Composition: ${template.composition.framing}${template.composition.angle ? `, ${template.composition.angle}` : ''}${template.composition.background ? `, ${template.composition.background}` : ''}`,
-    `Colors: ${template.color_palette.join(', ')}`,
-    `Quality: ${template.resolution} ${template.output_style}`
-  ];
-  
-  return parts.join('. ');
+  return `${template.subject}. Shot: ${template.composition.shot_type} (${template.composition.framing}, ${template.composition.angle}). Camera: ${template.camera.film_stock} film look, ${template.camera.camera}, ${template.camera.lens}, aperture ${template.camera.aperture}, focus on ${template.camera.focus}. Lighting: ${template.lighting.type}${template.lighting.modifier ? `, ${template.lighting.modifier}` : ''}. Style: ${template.style}. Mood: ${template.mood}. Color: ${template.color_tone}. ${template.negative_prompt}`;
 }
 
 export const DEFAULT_PROMPTS: Record<string, string> = {
@@ -233,4 +187,4 @@ export const DEFAULT_PROMPTS: Record<string, string> = {
   'salon-room': formatPromptFromTemplate(PROMPT_TEMPLATES['salon-room'])
 };
 
-export const DEFAULT_NEGATIVE_PROMPTS = 'no watermark, no text, no logo, no brand name, blur, low quality, ugly, deformed, extra limbs, distorted hands, cartoon, illustration, anime style, oversaturated, noise, grain, cropped, floating object, wrong proportions, blurry, pixelated, low resolution, poor lighting, harsh shadows, color cast';
+export const DEFAULT_NEGATIVE_PROMPTS = 'no watermark, no text, no logo, blur, low quality, ugly, deformed, extra limbs, distorted hands, cartoon, illustration, anime style, oversaturated, noise, grain, cropped, floating object, wrong proportions, blurry, pixelated, low resolution, poor lighting, harsh shadows, color cast';
