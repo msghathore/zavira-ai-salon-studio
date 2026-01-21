@@ -239,7 +239,14 @@ export async function generateImage(
         },
       };
 
-      console.log('🚀 Gemini API Request:', { model: config.apiModelId, imageSize: actualSize, aspectRatio });
+      console.log('🚀 Gemini API Request:', { 
+        model: config.apiModelId, 
+        imageSize: actualSize, 
+        aspectRatio,
+        prompt: prompt.substring(0, 100) + '...',
+        hasReferenceImage: referenceImages && referenceImages.length > 0,
+        referenceImageCount: referenceImages?.length || 0
+      });
 
       response = await fetch(`https://api.laozhang.ai/v1beta/models/${config.apiModelId}:generateContent`, {
         method: 'POST',
