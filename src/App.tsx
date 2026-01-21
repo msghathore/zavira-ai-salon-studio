@@ -1,6 +1,6 @@
 import React, { useState, useRef, MouseEvent, useCallback, useEffect } from 'react';
 import { generateImage, createLaoZhangClient, ImageGenerationOptions, buildEditPrompt } from './lib/laozhang';
-import { CATEGORIES, DEFAULT_PROMPTS, DEFAULT_NEGATIVE_PROMPTS, CELL_LABELS, Category } from './data/categories';
+import { CATEGORIES, DEFAULT_PROMPTS, DEFAULT_NEGATIVE_PROMPTS, CELL_LABELS, Category, generateCellPromptWithVariations } from './data/categories';
 import BudgetTracker from './components/BudgetTracker';
 import { 
   supabase, 
@@ -403,7 +403,7 @@ export default function App() {
         letter,
         index,
         isSelected: false,
-        prompt: `Cell ${letter}: ${prompt}`,
+        prompt: generateCellPromptWithVariations(selectedElement.prompt, index),
         status: 'pending' as const,
       }));
 

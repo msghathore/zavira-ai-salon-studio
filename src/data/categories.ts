@@ -188,3 +188,74 @@ export const DEFAULT_PROMPTS: Record<string, string> = {
 };
 
 export const DEFAULT_NEGATIVE_PROMPTS = 'no watermark, no text, no logo, blur, low quality, ugly, deformed, extra limbs, distorted hands, cartoon, illustration, anime style, oversaturated, noise, grain, cropped, floating object, wrong proportions, blurry, pixelated, low resolution, poor lighting, harsh shadows, color cast';
+
+export const SKIN_TONES = [
+  "with fair/light skin tone",
+  "with light medium skin tone",
+  "with medium skin tone",
+  "with medium-dark skin tone"
+];
+
+export const EXPRESSIONS = [
+  "smiling warmly",
+  "confident focused",
+  "laughing naturally",
+  "thoughtful serene",
+  "relaxed content",
+  "determined professional",
+  "playful engaged",
+  "calm peaceful",
+  "excited joyful",
+  "curious interested",
+  "satisfied elegant",
+  "neutral composed",
+  "friendly welcoming",
+  "gentle kind",
+  "strong assured",
+  "happily glowing"
+];
+
+export const HAIR_STYLES = [
+  "with straight black hair",
+  "with wavy brown hair",
+  "with curly hair",
+  "with blonde ponytail",
+  "with red bob cut",
+  "with long dark hair",
+  "with medium layered cut",
+  "with updo style",
+  "with braids",
+  "with short pixie",
+  "with side-part style",
+  "with messy texture",
+  "with sleek polished style",
+  "with natural waves",
+  "with auburn hair",
+  "with silver-grey hair"
+];
+
+export const OUTFITS = [
+  "in white professional outfit",
+  "in black casual wear",
+  "in blue stylish clothing",
+  "in green ensemble",
+  "in pink attire",
+  "in neutral beige"
+];
+
+export function generateCellPromptWithVariations(
+  basePrompt: string,
+  cellIndex: number
+): string {
+  const skinIndex = cellIndex % 4;
+  const expressionIndex = cellIndex % 16;
+  const hairIndex = cellIndex % 16;
+  const outfitIndex = cellIndex % 6;
+
+  const skin = SKIN_TONES[skinIndex];
+  const expression = EXPRESSIONS[expressionIndex];
+  const hair = HAIR_STYLES[hairIndex];
+  const outfit = OUTFITS[outfitIndex];
+
+  return `${basePrompt}, ${skin}, ${expression}, ${hair}, ${outfit}`;
+}
