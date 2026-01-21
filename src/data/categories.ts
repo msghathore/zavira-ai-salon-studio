@@ -179,12 +179,20 @@ export function formatPromptFromTemplate(template: PromptTemplate): string {
   return `${template.subject}. Shot: ${template.composition.shot_type} (${template.composition.framing}, ${template.composition.angle}). Camera: ${template.camera.film_stock} film look, ${template.camera.camera}, ${template.camera.lens}, aperture ${template.camera.aperture}, focus on ${template.camera.focus}. Lighting: ${template.lighting.type}${template.lighting.modifier ? `, ${template.lighting.modifier}` : ''}. Style: ${template.style}. Mood: ${template.mood}. Color: ${template.color_tone}. ${template.negative_prompt}`;
 }
 
+export const SIMPLE_BASE_PROMPTS: Record<string, string> = {
+  'hair-chair': 'Woman client getting hair service at salon station, face visible',
+  'nail-station': 'Client hands receiving manicure at nail station',
+  'tattoo-bed': 'Person getting tattoo done on tattoo bed',
+  'massage-bed': 'Person receiving spa massage on massage table',
+  'salon-room': 'Salon interior with stylist working on client, busy active environment'
+};
+
 export const DEFAULT_PROMPTS: Record<string, string> = {
-  'hair-chair': formatPromptFromTemplate(PROMPT_TEMPLATES['hair-chair']),
-  'nail-station': formatPromptFromTemplate(PROMPT_TEMPLATES['nail-station']),
-  'tattoo-bed': formatPromptFromTemplate(PROMPT_TEMPLATES['tattoo-bed']),
-  'massage-bed': formatPromptFromTemplate(PROMPT_TEMPLATES['massage-bed']),
-  'salon-room': formatPromptFromTemplate(PROMPT_TEMPLATES['salon-room'])
+  'hair-chair': SIMPLE_BASE_PROMPTS['hair-chair'],
+  'nail-station': SIMPLE_BASE_PROMPTS['nail-station'],
+  'tattoo-bed': SIMPLE_BASE_PROMPTS['tattoo-bed'],
+  'massage-bed': SIMPLE_BASE_PROMPTS['massage-bed'],
+  'salon-room': SIMPLE_BASE_PROMPTS['salon-room']
 };
 
 export const DEFAULT_NEGATIVE_PROMPTS = 'no watermark, no text, no logo, blur, low quality, ugly, deformed, extra limbs, distorted hands, cartoon, illustration, anime style, oversaturated, noise, grain, cropped, floating object, wrong proportions, blurry, pixelated, low resolution, poor lighting, harsh shadows, color cast';
