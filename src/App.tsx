@@ -429,8 +429,8 @@ export default function App() {
       const options: ImageGenerationOptions = {
         prompt: gridPrompt,
         model: 'nano-banana-pro',
-        imageSize: '1K',
-        aspectRatio: '1:1',
+        imageSize: '4K',
+        aspectRatio: '16:9',
         referenceImages: selectedPhotos.length > 0 ? selectedPhotos : undefined,
       };
 
@@ -532,7 +532,7 @@ export default function App() {
             prompt: enhancedPrompt,
             model: 'nano-banana-pro',
             imageSize: '4K',
-            aspectRatio: '1:1',
+            aspectRatio: '16:9',
           };
 
           // Use same 10 random photos for consistency

@@ -15,9 +15,9 @@ export const CATEGORIES: Category[] = [
 export const CELL_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'];
 
 export const SIMPLE_BASE_PROMPTS: Record<string, string> = {
-  'hair': 'Beautiful woman with stunning hairstyle in modern salon, professional beauty photography, glossy magazine look',
-  'nail': 'Elegant nail art design on manicured hands, close-up professional beauty shot, intricate details',
-  'tattoo': 'Artistic tattoo design on skin, professional tattoo photography, clean aesthetic',
+  'hair': 'Beautiful diverse group of 16 women at modern hair salon. Varied ethnicities including African, Asian, Caucasian, Latin American. Ages 20-60. Diverse skin tones from fair to deep dark. Various hair textures - straight, wavy, curly, coily. Different lengths and styles. Professional beauty photography, soft natural lighting, magazine editorial quality. High-end salon interior. No watermarks, no text, no logos, no blur, no distortion.',
+  'nail': 'Elegant nail art design on manicured hands, close-up professional beauty shot, intricate details, vibrant colors, glossy finish, professional studio lighting, high-end beauty photography, no watermarks, no text, no logos.',
+  'tattoo': 'Artistic tattoo design on skin, professional tattoo photography, clean aesthetic, detailed linework, high contrast, professional lighting, magazine quality, no watermarks, no text, no logos.',
 };
 
 export const DEFAULT_PROMPTS: Record<string, string> = {
