@@ -164,12 +164,15 @@ export default function App() {
   const syncElements = async (newElements: Element[]) => {
     setElements(newElements);
     localStorage.setItem('zavira_elements', JSON.stringify(newElements));
+    console.log('Saved to localStorage, elements count:', newElements.length);
+    console.log('First element photos:', newElements[0]?.photoUrls?.length);
     
     if (supabaseReady) {
       try {
         for (const element of newElements) {
           await supabaseSaveElement(userIdRef.current, element);
         }
+        console.log('Synced to Supabase');
       } catch (err) {
         console.error('Error syncing elements to Supabase:', err);
       }
@@ -294,6 +297,8 @@ export default function App() {
         createdAt: editingElement.createdAt || new Date(),
       };
 
+      console.log('Saving element with photos:', newElement.photoUrls.length);
+
       const existingIndex = elements.findIndex(e => e.id === newElement.id);
       if (existingIndex >= 0) {
         const updated = [...elements];
@@ -306,6 +311,7 @@ export default function App() {
       setIsEditingElement(false);
       setEditingElement(null);
     } catch (err: any) {
+      console.error('Save error:', err);
       setError(err.message);
     } finally {
       setIsUploading(false);
@@ -331,16 +337,23 @@ export default function App() {
     setIsUploading(true);
     try {
       const files = Array.from(e.target.files);
+      console.log(`Uploading ${files.length} photos...`);
       for (const file of files) {
+        console.log('Uploading file:', file.name);
         const url = await supabaseUploadPhoto(userIdRef.current, file);
+        console.log('Uploaded URL:', url);
         if (url) {
           setEditingElement(prev => prev ? {
             ...prev,
             photoUrls: [...(prev.photoUrls || []), url],
           } : null);
+        } else {
+          console.error('Failed to upload photo:', file.name);
         }
       }
+      console.log('Total photos in editingElement:', editingElement?.photoUrls?.length);
     } catch (err: any) {
+      console.error('Upload error:', err);
       setError(err.message);
     } finally {
       setIsUploading(false);
