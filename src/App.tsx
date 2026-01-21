@@ -261,7 +261,7 @@ export default function App() {
   // Create new element
   const handleCreateElement = () => {
     setEditingElement({
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       category: selectedCategory,
       name: '',
       prompt: DEFAULT_PROMPTS[selectedCategory] || '',
@@ -288,7 +288,7 @@ export default function App() {
     setIsUploading(true);
     try {
       const newElement: Element = {
-        id: editingElement.id || Date.now().toString(),
+        id: editingElement.id || crypto.randomUUID(),
         category: editingElement.category,
         name: editingElement.name,
         prompt: editingElement.prompt || DEFAULT_PROMPTS[editingElement.category] || '',
