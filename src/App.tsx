@@ -66,7 +66,7 @@ interface PostedContent {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('generate');
-  const [selectedCategory, setSelectedCategory] = useState<string>('hair');
+  const [selectedCategory, setSelectedCategory] = useState<string>(CATEGORIES[0].id);
   const [elements, setElements] = useState<Element[]>([]);
   const [selectedElement, setSelectedElement] = useState<Element | null>(null);
   const [generations, setGenerations] = useState<Generation[]>([]);
@@ -94,7 +94,7 @@ export default function App() {
     { id: 'review', label: 'Review', icon: '✅' },
   ];
   
-  const currentCategory = CATEGORIES.find(c => c.id === selectedCategory)!;
+  const currentCategory = CATEGORIES.find(c => c.id === selectedCategory) || CATEGORIES[0];
 
   // Load data from Supabase or localStorage on mount
   useEffect(() => {
