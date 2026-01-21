@@ -384,16 +384,24 @@ export default function App() {
     try {
       const client = createLaoZhangClient(LAOZHANG_API_KEY);
 
+      // Get all photos from the selected category (from all elements)
+      const categoryPhotos = elements
+        .filter(el => el.category === selectedElement.category)
+        .flatMap(el => el.photoUrls);
+      
+      // Randomly select up to 10 photos
+      const shuffled = categoryPhotos.sort(() => 0.5 - Math.random());
+      const selectedPhotos = shuffled.slice(0, 10);
+
+      const gridPrompt = `${prompt}. Generate a 4x4 grid with 16 different client variations. Kodak Portra 400 film look, natural skin texture with visible pores and subtle imperfections, healthy glow, subsurface scattering, soft natural lighting, 85mm f/1.4, Canon R5, photorealistic portrait. Each cell must show a different person with unique face, expression, skin tone, hair style, and outfit. Do not generate any additional images. Output single grid image only. ${DEFAULT_NEGATIVE_PROMPTS}`;
+
       const options: ImageGenerationOptions = {
-        prompt: prompt,
+        prompt: gridPrompt,
         model: 'nano-banana-pro',
         imageSize: '1K',
         aspectRatio: '1:1',
+        referenceImages: selectedPhotos.length > 0 ? selectedPhotos : undefined,
       };
-
-      if (selectedElement.photoUrls.length > 0) {
-        options.referenceImage = selectedElement.photoUrls[0];
-      }
 
       const result = await generateImage(client, options);
 
@@ -487,7 +495,7 @@ export default function App() {
             cell.prompt,
             previousImages,
             gridUrl || undefined
-          );
+          ) + '. Kodak Portra 400 film look, natural skin texture with visible pores and subtle imperfections, healthy glow, subsurface scattering, soft natural lighting, 85mm f/1.4, Canon R5, photorealistic portrait.';
 
           const options: ImageGenerationOptions = {
             prompt: enhancedPrompt,
@@ -496,8 +504,16 @@ export default function App() {
             aspectRatio: '1:1',
           };
 
+          // Use same 10 random photos for consistency
           if (selectedElement && selectedElement.photoUrls.length > 0) {
-            options.referenceImage = selectedElement.photoUrls[0];
+            const categoryPhotos = elements
+              .filter(el => el.category === selectedElement.category)
+              .flatMap(el => el.photoUrls);
+            const shuffled = categoryPhotos.sort(() => 0.5 - Math.random());
+            const selectedPhotos = shuffled.slice(0, 10);
+            if (selectedPhotos.length > 0) {
+              options.referenceImages = selectedPhotos;
+            }
           }
 
           const result = await generateImage(client, options);

@@ -36,7 +36,7 @@ export interface ImageGenerationOptions {
   model?: ImageModel;
   imageSize?: '1K' | '2K' | '4K';
   aspectRatio?: '1:1' | '16:9' | '9:16' | '4:3' | '3:4';
-  referenceImage?: string;
+  referenceImages?: string[];
   styleReference?: string;
 }
 
@@ -187,7 +187,7 @@ export async function generateImage(
     model = 'nano-banana-pro',
     imageSize = '4K',
     aspectRatio = '1:1',
-    referenceImage,
+    referenceImages,
     styleReference,
   } = options;
 
@@ -202,15 +202,17 @@ export async function generateImage(
       const parts: Array<{ text?: string; inline_data?: { mime_type: string; data: string } }> = [];
       parts.push({ text: prompt });
 
-      if (referenceImage) {
-        const imageData = parseDataUrl(referenceImage);
-        if (imageData) {
-          parts.push({
-            inline_data: {
-              mime_type: imageData.mimeType,
-              data: imageData.data,
-            }
-          });
+      if (referenceImages && referenceImages.length > 0) {
+        for (const refImage of referenceImages) {
+          const imageData = parseDataUrl(refImage);
+          if (imageData) {
+            parts.push({
+              inline_data: {
+                mime_type: imageData.mimeType,
+                data: imageData.data,
+              }
+            });
+          }
         }
       }
 
