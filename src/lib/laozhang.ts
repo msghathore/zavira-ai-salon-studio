@@ -304,12 +304,12 @@ export async function generateImage(
       };
 
       // Add reference image if provided (for image editing)
-      if (referenceImage) {
-        const imageData = parseDataUrl(referenceImage);
+      if (referenceImages && referenceImages.length > 0) {
+        const imageData = parseDataUrl(referenceImages[0]);
         if (imageData) {
           requestBody.image = imageData.data;
         }
-} else if (styleReference) {
+      } else if (styleReference) {
         // If only style reference is provided, use it as the reference image
         const styleData = parseDataUrl(styleReference);
         if (styleData) {
@@ -319,7 +319,7 @@ export async function generateImage(
         }
       }
 
-      console.log('🚀 GPT Image API Request:', { model: config.apiModelId, size, quality, aspectRatio, hasRefImage: !!referenceImage });
+      console.log('🚀 GPT Image API Request:', { model: config.apiModelId, size, quality, aspectRatio, hasRefImage: !!(referenceImages && referenceImages.length > 0) });
 
       response = await fetch('https://api.laozhang.ai/v1/images/generations', {
         method: 'POST',
