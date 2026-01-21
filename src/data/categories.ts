@@ -81,7 +81,7 @@ export const PROMPT_TEMPLATES: Record<string, PromptTemplate> = {
     subject: "Hands receiving manicure treatment, close-up of nails being painted, professional salon setting",
     shot_type: "extreme close-up",
     camera: {
-      film_stock: "Kodak Gold 200",
+      film_stock: "Kodak Portra 400",
       camera: "Sony A7IV with 100mm macro lens",
       lens: "100mm f/2.8 macro",
       aperture: "f/4.0",
@@ -105,7 +105,7 @@ export const PROMPT_TEMPLATES: Record<string, PromptTemplate> = {
     subject: "Person getting tattoo work done, focused artist in background, tattoo machine visible",
     shot_type: "medium shot",
     camera: {
-      film_stock: "Kodak Tri-X 400",
+      film_stock: "Kodak Portra 400",
       camera: "Leica Q2 with 28mm fixed lens",
       lens: "28mm f/1.7",
       aperture: "f/2.8",
@@ -129,7 +129,7 @@ export const PROMPT_TEMPLATES: Record<string, PromptTemplate> = {
     subject: "Person receiving spa massage, face down on massage table, serene relaxed state",
     shot_type: "medium shot",
     camera: {
-      film_stock: "Fuji Pro 400H",
+      film_stock: "Kodak Portra 400",
       camera: "Hasselblad X2D with 45mm lens",
       lens: "45mm f/3.5",
       aperture: "f/4.0",
@@ -153,7 +153,7 @@ export const PROMPT_TEMPLATES: Record<string, PromptTemplate> = {
     subject: "Salon interior with stylist working on client, activity in progress, busy professional environment",
     shot_type: "wide shot",
     camera: {
-      film_stock: "Kodak Ektar 100",
+      film_stock: "Kodak Portra 400",
       camera: "Nikon Z8 with 24-70mm zoom",
       lens: "35mm f/2.8",
       aperture: "f/5.6",
