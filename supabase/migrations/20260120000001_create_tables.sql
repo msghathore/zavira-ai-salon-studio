@@ -1,9 +1,6 @@
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 -- Elements table
 CREATE TABLE IF NOT EXISTS elements (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id TEXT NOT NULL,
   category TEXT NOT NULL CHECK (category IN ('hair', 'nail', 'tattoo')),
   name TEXT NOT NULL,
@@ -17,7 +14,7 @@ CREATE TABLE IF NOT EXISTS elements (
 
 -- Generations table
 CREATE TABLE IF NOT EXISTS generations (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id TEXT NOT NULL,
   category_id TEXT NOT NULL,
   category_name TEXT NOT NULL,
@@ -30,7 +27,7 @@ CREATE TABLE IF NOT EXISTS generations (
 
 -- Posted content table
 CREATE TABLE IF NOT EXISTS posted_content (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id TEXT NOT NULL,
   generation_id TEXT NOT NULL,
   cell_letter TEXT NOT NULL,

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getTrendingTracks, AudiusTrack } from '../lib/audius';
 
 interface GeneratedImage {
   id: string;
@@ -13,7 +14,65 @@ export default function ReviewPanel() {
   const [reviewing, setReviewing] = useState(false);
   const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(null);
   const [caption, setCaption] = useState('');
-  const [hashtags, setHashtags] = useState('');
+  const [hashtags, setHashtags] = useState('#ZaviraSalon #Winnipeg #HairSalon #HairInspo #SalonVibes');
+  const [trendingTrack, setTrendingTrack] = useState<AudiusTrack | null>(null);
+  const [loadingTrack, setLoadingTrack] = useState(true);
+  const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
+  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const fetchTrendingTrack = async () => {
+      setLoadingTrack(true);
+      const tracks = await getTrendingTracks('week', 1);
+      if (tracks.length > 0) {
+        setTrendingTrack(tracks[0]);
+      }
+      setLoadingTrack(false);
+    };
+
+    fetchTrendingTrack();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (audio) {
+        audio.pause();
+        audio.src = '';
+      }
+    };
+  }, [audio]);
+
+  const handlePlayPause = () => {
+    if (!trendingTrack) return;
+
+    if (playingTrackId === trendingTrack.id) {
+      if (audio) {
+        audio.pause();
+        setPlayingTrackId(null);
+      }
+    } else {
+      if (audio) {
+        audio.pause();
+      }
+
+      if (trendingTrack.stream_url) {
+        const newAudio = new Audio(trendingTrack.stream_url);
+        newAudio.play().catch(err => console.error('Playback error:', err));
+        setAudio(newAudio);
+        setPlayingTrackId(trendingTrack.id);
+
+        newAudio.addEventListener('ended', () => {
+          setPlayingTrackId(null);
+        });
+      }
+    }
+  };
+
+  const formatDuration = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const handleApprove = () => {
     setReviewing(true);
@@ -68,6 +127,61 @@ export default function ReviewPanel() {
               className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg text-gray-900"
               rows={3}
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Trending Music
+            </label>
+            {loadingTrack ? (
+              <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg border-2 border-gray-200">
+                Loading trending music...
+              </div>
+            ) : trendingTrack ? (
+              <div className="bg-emerald-50 border-2 border-emerald-200 rounded-lg p-4">
+                <div className="flex items-center gap-4">
+                  <div className="relative w-20 h-20 flex-shrink-0">
+                    <img
+                      src={trendingTrack.artwork['480x480'] || trendingTrack.artwork['150x150']}
+                      alt={trendingTrack.title}
+                      className="w-full h-full object-cover rounded-md"
+                    />
+                    <button
+                      onClick={handlePlayPause}
+                      className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 hover:bg-opacity-60 transition-all"
+                    >
+                      {playingTrackId === trendingTrack.id ? (
+                        <span className="text-white text-2xl">⏸</span>
+                      ) : (
+                        <span className="text-white text-2xl">▶</span>
+                      )}
+                    </button>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-gray-900 truncate">
+                      {trendingTrack.title}
+                    </h3>
+                    <p className="text-gray-600 truncate">{trendingTrack.artist}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs text-gray-500">{formatDuration(trendingTrack.duration)}</span>
+                      {trendingTrack.genre && (
+                        <span className="text-xs px-2 py-0.5 bg-white text-gray-700 rounded-full">
+                          {trendingTrack.genre}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-emerald-700 mt-2 font-medium">
+                      Automatically included in post
+                    </p>
+                  </div>
+                </div>
+                <input type="hidden" value={trendingTrack.stream_url || ''} name="musicUrl" />
+              </div>
+            ) : (
+              <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg border-2 border-gray-200">
+                No trending music available
+              </div>
+            )}
           </div>
 
           <div className="flex gap-3 mt-6">

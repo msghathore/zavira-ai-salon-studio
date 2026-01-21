@@ -1,6 +1,7 @@
 import React, { useState, useRef, MouseEvent, useCallback, useEffect } from 'react';
-import { generateImage, createLaoZhangClient, ImageGenerationOptions } from './lib/laozhang';
+import { generateImage, createLaoZhangClient, ImageGenerationOptions, buildEditPrompt } from './lib/laozhang';
 import { CATEGORIES, DEFAULT_PROMPTS, DEFAULT_NEGATIVE_PROMPTS, CELL_LABELS, Category } from './data/categories';
+import BudgetTracker from './components/BudgetTracker';
 import { 
   supabase, 
   getUserId, 
@@ -16,6 +17,8 @@ import {
   updatePostedStatus,
   isSupabaseConfigured 
 } from './lib/supabase';
+import { getTrendingTracks, AudiusTrack } from './lib/audius';
+import { trackImageGeneration } from './components/BudgetTracker';
 
 interface Element {
   id: string;
@@ -68,7 +71,6 @@ export default function App() {
   const [selectedElement, setSelectedElement] = useState<Element | null>(null);
   const [generations, setGenerations] = useState<Generation[]>([]);
   const [postedContent, setPostedContent] = useState<PostedContent[]>([]);
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem('laozhang_api_key') || '');
   const [gridUrl, setGridUrl] = useState<string | null>(null);
   const [isGeneratingGrid, setIsGeneratingGrid] = useState(false);
   const [isGeneratingCells, setIsGeneratingCells] = useState(false);
@@ -82,20 +84,17 @@ export default function App() {
   const [selectedPostImage, setSelectedPostImage] = useState<{url: string, letter: string, generationId: string} | null>(null);
   const gridImageRef = useRef<HTMLDivElement>(null);
   const userIdRef = useRef<string>(getUserId());
-
+  
+  const LAOZHANG_API_KEY = (import.meta.env["VITE_LAOZHANG_API_KEY"] || "");
+  
   const tabs = [
     { id: 'elements', label: 'Elements', icon: '📦' },
     { id: 'generate', label: 'Generate', icon: '✨' },
     { id: 'post', label: 'Post', icon: '🚀' },
     { id: 'review', label: 'Review', icon: '✅' },
   ];
-
+  
   const currentCategory = CATEGORIES.find(c => c.id === selectedCategory)!;
-
-  // Save API key
-  useEffect(() => {
-    if (apiKey) localStorage.setItem('laozhang_api_key', apiKey);
-  }, [apiKey]);
 
   // Load data from Supabase or localStorage on mount
   useEffect(() => {
@@ -367,8 +366,8 @@ export default function App() {
 
   // Generate grid
   const handleGenerateGrid = async () => {
-    if (!apiKey) {
-      setError('Please enter your Lao Zhang API key');
+    if (!LAOZHANG_API_KEY) {
+      setError('Lao Zhang API key not configured');
       return;
     }
     if (!selectedElement) {
@@ -376,32 +375,35 @@ export default function App() {
       return;
     }
 
+    const promptInput = document.getElementById('gridPrompt') as HTMLTextAreaElement;
+    const prompt = promptInput?.value || selectedElement.prompt;
+
     setIsGeneratingGrid(true);
     setError(null);
-
+    
     try {
-      const client = createLaoZhangClient(apiKey);
-      
-      // Build prompt with reference images if available
-      let fullPrompt = selectedElement.prompt;
-      if (selectedElement.photoUrls.length > 0) {
-        fullPrompt += `. Reference style from provided photos.`;
-      }
+      const client = createLaoZhangClient(LAOZHANG_API_KEY);
 
       const options: ImageGenerationOptions = {
-        prompt: fullPrompt,
+        prompt: prompt,
         model: 'nano-banana-pro',
         imageSize: '1K',
         aspectRatio: '1:1',
       };
 
+      if (selectedElement.photoUrls.length > 0) {
+        options.referenceImage = selectedElement.photoUrls[0];
+      }
+
       const result = await generateImage(client, options);
+
+      trackImageGeneration(1);
 
       const cells: GridCell[] = CELL_LABELS.map((letter, index) => ({
         letter,
         index,
         isSelected: false,
-        prompt: `Cell ${letter}: ${fullPrompt}`,
+        prompt: `Cell ${letter}: ${prompt}`,
         status: 'pending' as const,
       }));
 
@@ -460,8 +462,8 @@ export default function App() {
       setError('Please select at least one cell');
       return;
     }
-    if (!apiKey) {
-      setError('Please enter your Lao Zhang API key');
+    if (!LAOZHANG_API_KEY) {
+      setError('Lao Zhang API key not configured');
       return;
     }
 
@@ -469,7 +471,7 @@ export default function App() {
     setError(null);
 
     try {
-      const client = createLaoZhangClient(apiKey);
+      const client = createLaoZhangClient(LAOZHANG_API_KEY);
 
       for (const cell of selectedCells) {
         setGridCells(prev => prev.map(c =>
@@ -477,14 +479,30 @@ export default function App() {
         ));
 
         try {
+          const previousImages = gridCells
+            .filter(c => c.resultUrl)
+            .map(c => ({ prompt: c.prompt, url: c.resultUrl! }));
+
+          const enhancedPrompt = buildEditPrompt(
+            cell.prompt,
+            previousImages,
+            gridUrl || undefined
+          );
+
           const options: ImageGenerationOptions = {
-            prompt: cell.prompt,
+            prompt: enhancedPrompt,
             model: 'nano-banana-pro',
             imageSize: '4K',
             aspectRatio: '1:1',
           };
 
+          if (selectedElement && selectedElement.photoUrls.length > 0) {
+            options.referenceImage = selectedElement.photoUrls[0];
+          }
+
           const result = await generateImage(client, options);
+
+          trackImageGeneration(1);
 
           setGridCells(prev => prev.map(c =>
             c.letter === cell.letter ? { ...c, status: 'completed' as const, resultUrl: result.url } : c
@@ -645,6 +663,10 @@ export default function App() {
             </button>
           ))}
         </nav>
+
+        <div style={{ marginBottom: '24px', maxWidth: '320px' }}>
+          <BudgetTracker />
+        </div>
 
         {/* Error Display */}
         {error && (
@@ -826,37 +848,6 @@ export default function App() {
         {/* === GENERATE TAB === */}
         {activeTab === 'generate' && (
           <div>
-            {/* API Key Input */}
-            {!apiKey && (
-              <div style={{
-                background: 'rgba(16,185,129,0.1)',
-                border: '1px solid rgba(16,185,129,0.3)',
-                borderRadius: '16px',
-                padding: '20px',
-                marginBottom: '24px',
-              }}>
-                <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '12px', color: '#10b981' }}>
-                  🔑 Lao Zhang API Key
-                </h3>
-                <input
-                  type="password"
-                  placeholder="Enter your API key"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  style={{
-                    width: '100%',
-                    maxWidth: '300px',
-                    padding: '12px 14px',
-                    borderRadius: '10px',
-                    border: '1px solid rgba(255,255,255,0.15)',
-                    background: 'rgba(0,0,0,0.3)',
-                    color: '#fff',
-                    fontSize: '14px',
-                  }}
-                />
-              </div>
-            )}
-
             {/* Category Selection */}
             <div style={{ marginBottom: '24px' }}>
               <h2 style={{ fontSize: '20px', marginBottom: '16px' }}>Select Category</h2>
@@ -942,6 +933,39 @@ export default function App() {
                     </div>
                     <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>
                       {selectedElement.photoUrls.length} reference photos will be used
+                    </div>
+                  </div>
+                  
+                  {/* Prompt Editor */}
+                  <div style={{
+                    background: 'rgba(0,0,0,0.3)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                  }}>
+                    <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      ✏️ Prompt Editor
+                    </div>
+                    <textarea
+                      id="gridPrompt"
+                      defaultValue={selectedElement.prompt}
+                      placeholder="Describe what you want to generate..."
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(255,255,255,0.15)',
+                        background: 'rgba(0,0,0,0.3)',
+                        color: '#fff',
+                        fontSize: '14px',
+                        resize: 'vertical',
+                        minHeight: '80px',
+                        fontFamily: 'inherit',
+                        marginBottom: '8px',
+                      }}
+                    />
+                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
+                      💡 This prompt will be used to generate the 4x4 grid
                     </div>
                   </div>
                   
@@ -1054,38 +1078,8 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Budget & Selected Cells */}
+                  {/* Selected Cells Only */}
                   <div>
-                    {/* Budget */}
-                    <div style={{
-                      background: 'rgba(255,255,255,0.02)',
-                      borderRadius: '16px',
-                      padding: '16px',
-                      border: '1px solid rgba(255,255,255,0.05)',
-                      marginBottom: '16px',
-                    }}>
-                      <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '12px' }}>Budget</div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '8px' }}>
-                        <span style={{ color: 'rgba(255,255,255,0.5)' }}>Grid</span>
-                        <span>$0.05</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '8px' }}>
-                        <span style={{ color: 'rgba(255,255,255,0.5)' }}>Selected ({selectedCellCount})</span>
-                        <span style={{ color: '#10b981' }}>+ ${(selectedCellCount * 0.05).toFixed(2)}</span>
-                      </div>
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        padding: '12px',
-                        background: 'rgba(139,92,246,0.1)',
-                        borderRadius: '10px',
-                        marginTop: '12px',
-                      }}>
-                        <span style={{ fontWeight: 600 }}>Total</span>
-                        <span style={{ fontSize: '20px', fontWeight: 700, color: '#a78bfa' }}>${totalCost.toFixed(2)}</span>
-                      </div>
-                    </div>
-
                     {/* Selected Cell Prompts */}
                     {selectedCellCount > 0 && (
                       <div style={{
@@ -1422,12 +1416,67 @@ function PostSection({
   onPost: (image: {url: string, letter: string, generationId: string}, caption: string, hashtags: string[], musicUrl: string, platform: 'tiktok' | 'instagram') => Promise<void>;
   selectedPostImage: {url: string, letter: string, generationId: string} | null;
   setSelectedPostImage: (img: {url: string, letter: string, generationId: string} | null) => void;
-}) {
+ }) {
   const [caption, setCaption] = useState('');
   const [hashtags, setHashtags] = useState('#ZaviraSalon #Winnipeg #HairSalon');
   const [musicUrl, setMusicUrl] = useState('');
+  const [trendingTrack, setTrendingTrack] = useState<AudiusTrack | null>(null);
+  const [loadingTrack, setLoadingTrack] = useState(true);
+  const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
+  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
   const [platform, setPlatform] = useState<'tiktok' | 'instagram'>('tiktok');
   const [isPosting, setIsPosting] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+
+  useEffect(() => {
+    const fetchTrendingTrack = async () => {
+      setLoadingTrack(true);
+      const tracks = await getTrendingTracks('week', 1);
+      if (tracks.length > 0) {
+        const track = tracks[0];
+        setTrendingTrack(track);
+        setMusicUrl(track.stream_url || '');
+      }
+      setLoadingTrack(false);
+    };
+
+    fetchTrendingTrack();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (audio) {
+        audio.pause();
+        audio.src = '';
+      }
+    };
+  }, [audio]);
+
+  const handlePlayPause = () => {
+    if (!trendingTrack) return;
+
+    if (playingTrackId === trendingTrack.id) {
+      if (audio) {
+        audio.pause();
+        setPlayingTrackId(null);
+      }
+    } else {
+      if (audio) {
+        audio.pause();
+      }
+
+      if (trendingTrack.stream_url) {
+        const newAudio = new Audio(trendingTrack.stream_url);
+        newAudio.play().catch(err => console.error('Playback error:', err));
+        setAudio(newAudio);
+        setPlayingTrackId(trendingTrack.id);
+
+        newAudio.addEventListener('ended', () => {
+          setPlayingTrackId(null);
+        });
+      }
+    }
+  };
 
   const completedImages = generations.flatMap(gen => 
     gen.cells.filter(c => c.resultUrl).map(c => ({
@@ -1437,12 +1486,21 @@ function PostSection({
     }))
   );
 
-  const handlePost = async () => {
+  const handlePreview = () => {
+    setShowPreview(true);
+  };
+
+  const handleConfirmPost = async () => {
     if (!selectedPostImage) return;
+    setShowPreview(false);
     setIsPosting(true);
     await onPost(selectedPostImage, caption, hashtags.split(' ').filter(h => h), musicUrl, platform);
     setIsPosting(false);
     setSelectedPostImage(null);
+  };
+
+  const handleCancelPreview = () => {
+    setShowPreview(false);
   };
 
   const quickTemplates = [
@@ -1450,6 +1508,12 @@ function PostSection({
     { label: 'Nail 💅', caption: 'Fresh nails who dis 💅 Book your appointment!' },
     { label: 'Tattoo 🖊️', caption: 'Art that lasts forever 🖊️ Custom designs available' },
   ];
+
+  const formatDuration = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   return (
     <div style={{
@@ -1460,7 +1524,7 @@ function PostSection({
     }}>
       <h2 style={{ fontSize: '24px', marginBottom: '8px' }}>🚀 Post Content</h2>
       <p style={{ color: 'rgba(255,255,255,0.5)', marginBottom: '24px' }}>
-        Select an image and click Post - everything else happens in backend
+        Select an image and click Review & Post to preview before publishing
       </p>
 
       {completedImages.length === 0 ? (
@@ -1613,27 +1677,108 @@ function PostSection({
                   }}
                 />
 
-                {/* Music */}
-                <input
-                  type="text"
-                  value={musicUrl}
-                  onChange={(e) => setMusicUrl(e.target.value)}
-                  placeholder="TikTok sound URL (optional)"
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(255,255,255,0.15)',
-                    background: 'rgba(0,0,0,0.3)',
-                    color: '#fff',
-                    fontSize: '13px',
-                    marginBottom: '16px',
-                  }}
-                />
+                {/* Trending Music */}
+                <div style={{ marginBottom: '12px' }}>
+                  {loadingTrack ? (
+                    <div style={{
+                      textAlign: 'center',
+                      padding: '12px',
+                      background: 'rgba(255,255,255,0.05)',
+                      borderRadius: '8px',
+                      color: 'rgba(255,255,255,0.5)',
+                      fontSize: '13px',
+                    }}>
+                      Loading trending music...
+                    </div>
+                  ) : trendingTrack ? (
+                    <div style={{
+                      background: 'rgba(16,185,129,0.1)',
+                      border: '1px solid rgba(16,185,129,0.3)',
+                      borderRadius: '10px',
+                      padding: '10px',
+                      marginBottom: '12px',
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ position: 'relative', width: '48px', height: '48px', flexShrink: 0 }}>
+                          <img
+                            src={trendingTrack.artwork['480x480'] || trendingTrack.artwork['150x150']}
+                            alt={trendingTrack.title}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '6px' }}
+                          />
+                          <button
+                            onClick={handlePlayPause}
+                            style={{
+                              position: 'absolute',
+                              inset: 0,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              background: playingTrackId === trendingTrack.id ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.4)',
+                              cursor: 'pointer',
+                              border: 'none',
+                              borderRadius: '6px',
+                            }}
+                          >
+                            {playingTrackId === trendingTrack.id ? (
+                              <span style={{ color: '#fff', fontSize: '16px' }}>⏸</span>
+                            ) : (
+                              <span style={{ color: '#fff', fontSize: '16px' }}>▶</span>
+                            )}
+                          </button>
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontSize: '13px', fontWeight: 600, color: '#fff', margin: 0, marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {trendingTrack.title}
+                          </p>
+                          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', margin: 0, marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {trendingTrack.artist}
+                          </p>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>{formatDuration(trendingTrack.duration)}</span>
+                            {trendingTrack.genre && (
+                              <span style={{ fontSize: '10px', padding: '2px 6px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', color: 'rgba(255,255,255,0.7)' }}>
+                                {trendingTrack.genre}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 600 }}>✓ Auto-included</span>
+                        <input
+                          type="text"
+                          value={musicUrl}
+                          onChange={(e) => setMusicUrl(e.target.value)}
+                          placeholder="Music URL (auto-filled)"
+                          style={{
+                            flex: 1,
+                            padding: '8px 10px',
+                            borderRadius: '6px',
+                            border: '1px solid rgba(255,255,255,0.15)',
+                            background: 'rgba(0,0,0,0.3)',
+                            color: '#fff',
+                            fontSize: '11px',
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{
+                      textAlign: 'center',
+                      padding: '12px',
+                      background: 'rgba(255,255,255,0.05)',
+                      borderRadius: '8px',
+                      color: 'rgba(255,255,255,0.5)',
+                      fontSize: '13px',
+                    }}>
+                      No trending music available
+                    </div>
+                  )}
+                </div>
 
-                {/* Post Button */}
+                {/* Review & Post Button */}
                 <button
-                  onClick={handlePost}
+                  onClick={handlePreview}
                   disabled={isPosting}
                   style={{
                     width: '100%',
@@ -1647,11 +1792,144 @@ function PostSection({
                     fontWeight: 700,
                   }}
                 >
-                  {isPosting ? '⏳ Posting...' : '🚀 Post Now'}
+                  {isPosting ? '⏳ Posting...' : '👁️ Review & Post'}
                 </button>
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Preview Modal */}
+      {showPreview && selectedPostImage && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.95)',
+          zIndex: 300,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px',
+        }}>
+          <div style={{
+            background: '#0a0a0a',
+            borderRadius: '20px',
+            padding: '24px',
+            maxWidth: '500px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            border: '1px solid rgba(255,255,255,0.1)',
+          }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 600, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              👁️ Preview Post
+            </h2>
+
+            {/* Preview Image */}
+            <div style={{
+              borderRadius: '12px',
+              overflow: 'hidden',
+              marginBottom: '20px',
+            }}>
+              <img 
+                src={selectedPostImage.url} 
+                alt="Preview" 
+                style={{ width: '100%', display: 'block' }} 
+              />
+            </div>
+
+            {/* Platform Badge */}
+            <div style={{ marginBottom: '12px' }}>
+              <span style={{ 
+                background: platform === 'tiktok' ? '#fe2c55' : '#E1306C',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                fontSize: '13px',
+                fontWeight: 600,
+                textTransform: 'capitalize',
+              }}>
+                {platform === 'tiktok' ? '🎵 TikTok' : '📷 Instagram'}
+              </span>
+            </div>
+
+            {/* Caption Preview */}
+            {caption && (
+              <div style={{ marginBottom: '12px' }}>
+                <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px' }}>Caption</div>
+                <p style={{ fontSize: '14px', lineHeight: 1.5 }}>{caption}</p>
+              </div>
+            )}
+
+            {/* Hashtags Preview */}
+            {hashtags && (
+              <div style={{ marginBottom: '12px' }}>
+                <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px' }}>Hashtags</div>
+                <p style={{ fontSize: '13px', color: '#10b981' }}>{hashtags}</p>
+              </div>
+            )}
+
+            {/* Music Preview */}
+            {trendingTrack && (
+              <div style={{ 
+                background: 'rgba(16,185,129,0.1)',
+                border: '1px solid rgba(16,185,129,0.3)',
+                borderRadius: '10px',
+                padding: '12px',
+                marginBottom: '20px',
+              }}>
+                <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '8px' }}>🎵 Music</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <img
+                    src={trendingTrack.artwork['150x150']}
+                    alt={trendingTrack.title}
+                    style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }}
+                  />
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: 600 }}>{trendingTrack.title}</div>
+                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>{trendingTrack.artist}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={handleCancelPreview}
+                style={{
+                  flex: 1,
+                  padding: '14px',
+                  borderRadius: '10px',
+                  background: 'rgba(255,255,255,0.1)',
+                  color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                }}
+              >
+                ✏️ Edit
+              </button>
+              <button
+                onClick={handleConfirmPost}
+                disabled={isPosting}
+                style={{
+                  flex: 1,
+                  padding: '14px',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  cursor: isPosting ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                }}
+              >
+                {isPosting ? '⏳ Posting...' : '🚀 Confirm Post'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
