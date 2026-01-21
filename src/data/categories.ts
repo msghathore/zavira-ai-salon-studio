@@ -180,19 +180,15 @@ export function formatPromptFromTemplate(template: PromptTemplate): string {
 }
 
 export const SIMPLE_BASE_PROMPTS: Record<string, string> = {
-  'hair-chair': 'Woman client getting hair service at salon station, face visible',
-  'nail-station': 'Client hands receiving manicure at nail station',
-  'tattoo-bed': 'Person getting tattoo done on tattoo bed',
-  'massage-bed': 'Person receiving spa massage on massage table',
-  'salon-room': 'Salon interior with stylist working on client, busy active environment'
+  'hair': 'Beautiful woman with stunning hairstyle in modern salon, professional beauty photography, glossy magazine look',
+  'nail': 'Elegant nail art design on manicured hands, close-up professional beauty shot, intricate details',
+  'tattoo': 'Artistic tattoo design on skin, professional tattoo photography, clean aesthetic',
 };
 
 export const DEFAULT_PROMPTS: Record<string, string> = {
-  'hair-chair': SIMPLE_BASE_PROMPTS['hair-chair'],
-  'nail-station': SIMPLE_BASE_PROMPTS['nail-station'],
-  'tattoo-bed': SIMPLE_BASE_PROMPTS['tattoo-bed'],
-  'massage-bed': SIMPLE_BASE_PROMPTS['massage-bed'],
-  'salon-room': SIMPLE_BASE_PROMPTS['salon-room']
+  'hair': SIMPLE_BASE_PROMPTS['hair'],
+  'nail': SIMPLE_BASE_PROMPTS['nail'],
+  'tattoo': SIMPLE_BASE_PROMPTS['tattoo']
 };
 
 export const DEFAULT_NEGATIVE_PROMPTS = 'no watermark, no text, no logo, blur, low quality, ugly, deformed, extra limbs, distorted hands, cartoon, illustration, anime style, oversaturated, noise, grain, cropped, floating object, wrong proportions, blurry, pixelated, low resolution, poor lighting, harsh shadows, color cast';
