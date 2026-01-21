@@ -121,10 +121,24 @@ export default function App() {
         const savedElements = localStorage.getItem('zavira_elements');
         if (savedElements) {
           try {
-            const parsed = JSON.parse(savedElements);
+            let parsed = JSON.parse(savedElements);
             const localElements = parsed.map((e: any) => ({ ...e, createdAt: new Date(e.createdAt) }));
-            if (!isSupabaseConfigured() || localElements.length > elements.length) {
-              setElements(localElements);
+            
+            // Clean up old elements with numeric IDs or invalid categories
+            const validCategories = ['hair', 'nail', 'tattoo'];
+            const cleanedElements = localElements.filter((e: any) => 
+              e.id && 
+              e.id.includes('-') && 
+              validCategories.includes(e.category)
+            );
+            
+            if (cleanedElements.length !== localElements.length) {
+              console.log(`Cleaned ${localElements.length - cleanedElements.length} invalid elements`);
+              localStorage.setItem('zavira_elements', JSON.stringify(cleanedElements));
+            }
+            
+            if (!isSupabaseConfigured() || cleanedElements.length > elements.length) {
+              setElements(cleanedElements);
             }
           } catch {}
         }
