@@ -675,6 +675,15 @@ export default function App() {
   const totalCost = 0.05 + (selectedCellCount * 0.05);
   const categoryElements = elements.filter(e => e.category === selectedCategory);
 
+  // Debug logging
+  useEffect(() => {
+    console.log('🔍 Debug Info:');
+    console.log('Total elements:', elements.length);
+    console.log('Selected category:', selectedCategory);
+    console.log('Category elements:', categoryElements.length);
+    console.log('All elements:', elements.map(e => ({ id: e.id, name: e.name, category: e.category })));
+  }, [elements.length, selectedCategory, categoryElements.length]);
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -827,6 +836,47 @@ export default function App() {
         {/* === ELEMENTS TAB === */}
         {activeTab === 'elements' && (
           <div>
+            {/* Debug Info Bar */}
+            <div style={{
+              padding: '12px 16px',
+              background: 'rgba(59, 130, 246, 0.1)',
+              borderRadius: '12px',
+              marginBottom: '16px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              fontSize: '13px',
+              color: 'rgba(255,255,255,0.7)',
+            }}>
+              <div>
+                Total: {elements.length} | {selectedCategory}: {categoryElements.length}
+              </div>
+              <button
+                onClick={async () => {
+                  setIsLoading(true);
+                  const userId = userIdRef.current;
+                  const supabaseElements = await supabaseFetchElements(userId);
+                  if (supabaseElements.length > 0) {
+                    setElements(supabaseElements);
+                    localStorage.setItem('zavira_elements', JSON.stringify(supabaseElements));
+                  }
+                  setIsLoading(false);
+                }}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  background: 'rgba(59, 130, 246, 0.2)',
+                  border: '1px solid rgba(59, 130, 246, 0.3)',
+                  color: '#60a5fa',
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                }}
+              >
+                🔄 Refresh from Supabase
+              </button>
+            </div>
+
             {/* Category Tabs */}
             <div style={{
               display: 'flex',
