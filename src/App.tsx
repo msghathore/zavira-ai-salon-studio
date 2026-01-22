@@ -403,12 +403,53 @@ export default function App() {
     });
   };
 
+  // Helper to calculate how many reference photos will be used
+  const getRefPhotoCount = () => {
+    if (!selectedElement) return 0;
+    const categoryPhotos = elements
+      .filter(el => el.category === selectedElement.category)
+      .flatMap(el => el.photoUrls);
+    return Math.min(10, categoryPhotos.length);
+  };
+
+  // Helper to get default prompt for category
+  const getDefaultPromptForCategory = (category: string) => {
+    const oldPrompts = [
+      'Beautiful woman with stunning hairstyle in modern salon, professional beauty photography, glossy magazine look',
+      'Elegant nail art design on manicured hands, close-up professional beauty shot, intricate details',
+      'Artistic tattoo design on skin, professional tattoo photography, clean aesthetic'
+    ];
+    if (oldPrompts.includes(DEFAULT_PROMPTS[category] || '')) {
+      return DEFAULT_PROMPTS[category] || '';
+    }
+    return DEFAULT_PROMPTS[category] || '';
+  };
+
   // Select element for generation
   const handleSelectElement = (element: Element) => {
-    setSelectedElement(element);
-    setSelectedCategory(element.category);
+    // Auto-upgrade old prompts
+    const oldPrompts = [
+      'Beautiful woman with stunning hairstyle in modern salon, professional beauty photography, glossy magazine look',
+      'Elegant nail art design on manicured hands, close-up professional beauty shot, intricate details',
+      'Artistic tattoo design on skin, professional tattoo photography, clean aesthetic'
+    ];
+    
+    let upgradedElement = { ...element };
+    if (oldPrompts.includes(element.prompt)) {
+      upgradedElement.prompt = DEFAULT_PROMPTS[element.category] || element.prompt;
+      // Update in elements array
+      const updatedElements = elements.map(e => 
+        e.id === element.id ? upgradedElement : e
+      );
+      setElements(updatedElements);
+      localStorage.setItem('zavira_elements', JSON.stringify(updatedElements));
+    }
+    
+    setSelectedElement(upgradedElement);
+    setSelectedCategory(upgradedElement.category);
     setGridUrl(null);
     setGridCells([]);
+    setRefPhotosToUse(getRefPhotoCount());
   };
 
   // Generate grid
@@ -996,7 +1037,7 @@ export default function App() {
                       Generate for: {selectedElement.name}
                     </div>
                     <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>
-                      {refPhotosToUse} reference photos will be used
+                      {getRefPhotoCount()} reference photos will be used (10 max)
                     </div>
                   </div>
                   
