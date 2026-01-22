@@ -672,6 +672,16 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
       };
       setGenerations(prev => [newGeneration, ...prev]);
 
+      // Save to Supabase
+      if (supabaseReady && userIdRef.current) {
+        try {
+          await supabaseSaveGeneration(userIdRef.current, newGeneration);
+          console.log('✅ Grid saved to Supabase');
+        } catch (err) {
+          console.error('❌ Failed to save grid to Supabase:', err);
+        }
+      }
+
     } catch (err: any) {
       setError(err.message || 'Failed to generate grid');
     } finally {
@@ -743,7 +753,7 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
             prompt: enhancedPrompt,
             model: 'nano-banana-pro',
             imageSize: '4K',
-            aspectRatio: '16:9',
+            aspectRatio: '1:1',
           };
 
           // Use same 10 random photos for consistency
@@ -772,13 +782,30 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
         }
       }
 
-      setGenerations(prev => prev.map((gen, i) => 
-        i === 0 ? { 
-          ...gen, 
+      const updatedGenerations = setGenerations(prev => prev.map((gen, i) =>
+        i === 0 ? {
+          ...gen,
           cells: gridCells,
           totalCost: gen.totalCost + (selectedCells.length * 0.05)
         } : gen
       ));
+
+      // Save updated generation to Supabase
+      if (supabaseReady && userIdRef.current) {
+        try {
+          const updatedGen = generations[0];
+          if (updatedGen) {
+            await supabaseSaveGeneration(userIdRef.current, {
+              ...updatedGen,
+              cells: gridCells,
+              totalCost: updatedGen.totalCost + (selectedCells.length * 0.05)
+            });
+            console.log('✅ Full images saved to Supabase');
+          }
+        } catch (err) {
+          console.error('❌ Failed to save full images to Supabase:', err);
+        }
+      }
 
     } catch (err: any) {
       setError(err.message || 'Failed to generate cells');
@@ -1578,54 +1605,6 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
                   background: 'rgba(0,0,0,0.3)',
                   color: '#fff',
                   fontSize: '14px',
-                }}
-              />
-            </div>
-
-            {/* Prompt */}
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'rgba(255,255,255,0.7)' }}>
-                Prompt
-              </label>
-              <textarea
-                value={editingElement.prompt}
-                onChange={(e) => setEditingElement({ ...editingElement, prompt: e.target.value })}
-                placeholder="Describe what you want to generate..."
-                style={{
-                  width: '100%',
-                  padding: '12px 14px',
-                  borderRadius: '10px',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  background: 'rgba(0,0,0,0.3)',
-                  color: '#fff',
-                  fontSize: '14px',
-                  resize: 'vertical',
-                  minHeight: '80px',
-                  fontFamily: 'inherit',
-                }}
-              />
-            </div>
-
-            {/* Negative Prompt */}
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'rgba(255,255,255,0.7)' }}>
-                Negative Prompt
-              </label>
-              <textarea
-                value={editingElement.negativePrompt}
-                onChange={(e) => setEditingElement({ ...editingElement, negativePrompt: e.target.value })}
-                placeholder="What to avoid..."
-                style={{
-                  width: '100%',
-                  padding: '12px 14px',
-                  borderRadius: '10px',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  background: 'rgba(0,0,0,0.3)',
-                  color: '#fff',
-                  fontSize: '14px',
-                  resize: 'vertical',
-                  minHeight: '60px',
-                  fontFamily: 'inherit',
                 }}
               />
             </div>
