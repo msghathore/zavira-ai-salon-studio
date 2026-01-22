@@ -35,7 +35,7 @@ export interface ImageGenerationOptions {
   prompt: string;
   model?: ImageModel;
   imageSize?: '1K' | '2K' | '4K';
-  aspectRatio?: '1:1' | '16:9' | '9:16' | '4:3' | '3:4';
+  aspectRatio?: '1:1' | '16:9' | '9:16' | '4:3' | '3:4' | '21:9';
   referenceImages?: string[];
   styleReference?: string;
 }

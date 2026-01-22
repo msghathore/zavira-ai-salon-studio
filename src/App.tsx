@@ -519,13 +519,40 @@ export default function App() {
       const selectedPhotos = shuffled.slice(0, 10);
       setRefPhotosToUse(selectedPhotos.length);
 
-      const gridPrompt = `${prompt}. Close-up portrait shots, medium shots, and wide shots. Various camera angles including eye level, high angle, low angle, and overhead. Shot with different lenses including 35mm, 50mm, 85mm, and 100mm macro. Kodak Portra 400, Fuji Pro 400H, and Ilford HP5 film stock. Soft natural lighting, professional beauty photography, magazine editorial quality. ${DEFAULT_NEGATIVE_PROMPTS}`;
+      const gridPrompt = `
+Create a 4x4 grid with exactly 16 DIFFERENT clients actively getting ${selectedElement.name || 'salon services'}
+IN a professional salon. The salon room is set up with professional ${selectedElement.category === 'hair' ? 'styling chairs, mirrors, and salon equipment' : selectedElement.category === 'nail' ? 'nail stations with lamps and tools' : selectedElement.category === 'tattoo' ? 'tattoo studio bed/chair with professional setup' : selectedElement.category === 'massage' ? 'massage therapy beds and spa setup' : 'facial treatment room with professional setup'}.
+Clients are sitting or lying down comfortably ACTIVELY RECEIVING the service.
+
+RANDOMIZE EACH OF THE 16 CLIENTS - ALL DIFFERENT:
+- Skin tones: vary from very light to deep/dark (represent all ethnicities)
+- Ethnicities: diverse - include Asian, African, Latin American, European, Middle Eastern, Indian, and mixed heritage
+- Ages: range from 20s to 50s, show different age groups
+- Hair types: straight, wavy, curly, coily, different colors (black, brown, blonde, red, gray), different lengths
+- Expressions: some smiling, some relaxed, some focused, natural expressions
+- Camera perspective: vary between different angles (some head-on, some 3/4 view, some from side)
+- Camera equipment variation: shot with different brands (Canon, Nikon, Sony implied by slight variations)
+- Lens effects: vary shallow depth of field (f/1.8, f/2.8) to deeper focus (f/5.6, f/8)
+- Body positioning: different arm positions, hand placements, body angles
+- Clothing: different colors and styles appropriate for salon
+
+CONSISTENT ACROSS ALL 16:
+- Film stock: Kodak Portra 400 (consistent professional salon color film look)
+- Lighting: Professional salon lighting mixed with soft natural window light
+- Quality: Professional magazine editorial quality, beauty industry standard
+- Skin texture: NATURAL skin with visible texture, freckles, minor imperfections, realistic skin - NOT AI-perfect or overly smoothed
+- Background: The actual salon room visible with professional equipment, mirrors, plants, professional decor
+- Service: All 16 clients actively receiving the ${selectedElement.category} service - can see the action happening
+
+MOOD: Professional, happy, beautiful salon environment, clients enjoying and trusting the service, high-end salon feel.
+
+${DEFAULT_NEGATIVE_PROMPTS}`;
 
       const options: ImageGenerationOptions = {
         prompt: gridPrompt,
         model: 'nano-banana-pro',
         imageSize: '4K',
-        aspectRatio: '16:9',
+        aspectRatio: '21:9',
         referenceImages: selectedPhotos.length > 0 ? selectedPhotos : undefined,
       };
 

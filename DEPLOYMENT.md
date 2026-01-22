@@ -5,9 +5,15 @@
 **Status**: ✅ **DEPLOYED & LIVE**
 
 - **Primary URL**: https://zavira-ai-salon-studio.vercel.app
-- **Latest Build**: 2026-01-22 at 21:15 UTC
-- **Build Status**: ✓ Ready (Build time: ~7s)
-- **Bundle Size**: 371.45 kB (gzip: 105.21 kB)
+- **Latest Build**: 2026-01-22 at 21:30 UTC
+- **Build Status**: ✓ Ready (Build time: ~6s)
+- **Bundle Size**: 372.42 kB (gzip: 105.44 kB)
+
+### Latest Update (21:30 UTC)
+- Added debug info bar showing element counts
+- Added "Refresh from Supabase" button
+- Added console logging for troubleshooting
+- Configured global MCP servers for future sessions
 
 ## ✅ What's Been Done
 
