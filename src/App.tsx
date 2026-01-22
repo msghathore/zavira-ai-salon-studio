@@ -129,12 +129,27 @@ export default function App() {
             const cleanedElements = localElements.filter((e: any) =>
               e.id &&
               e.id.includes('-') &&
-              validCategories.includes(e.category) &&
+              validCategories.includes(e.category.split('-')[0]) &&
               e.name && e.prompt
-            ).map((e: any) => ({
-              ...e,
-              category: e.category.replace('-chair', '').replace('-station', '').replace('-bed', '').replace('-room', ''),
-            }));
+            ).map((e: any) => {
+              const baseCat = e.category.split('-')[0];
+              const oldPrompts = [
+                'Beautiful woman with stunning hairstyle in modern salon, professional beauty photography, glossy magazine look',
+                'Elegant nail art design on manicured hands, close-up professional beauty shot, intricate details',
+                'Artistic tattoo design on skin, professional tattoo photography, clean aesthetic'
+              ];
+              
+              let updatedPrompt = e.prompt;
+              if (oldPrompts.includes(e.prompt)) {
+                updatedPrompt = DEFAULT_PROMPTS[baseCat] || e.prompt;
+              }
+
+              return {
+                ...e,
+                category: baseCat,
+                prompt: updatedPrompt
+              };
+            });
             
             if (cleanedElements.length !== localElements.length) {
               console.log(`Cleaned ${localElements.length - cleanedElements.length} invalid elements`);
@@ -424,7 +439,7 @@ export default function App() {
       const shuffled = categoryPhotos.sort(() => 0.5 - Math.random());
       const selectedPhotos = shuffled.slice(0, 10);
 
-      const gridPrompt = `${prompt}. Generate a 4x4 grid with 16 different client variations. Kodak Portra 400 film look, natural skin texture with visible pores and subtle imperfections, healthy glow, subsurface scattering, soft natural lighting, 85mm f/1.4, Canon R5, photorealistic portrait. Each cell must show a different person with unique face, expression, skin tone, hair style, and outfit. Do not generate any additional images. Output single grid image only. ${DEFAULT_NEGATIVE_PROMPTS}`;
+      const gridPrompt = `${prompt}. Kodak Portra 400 film look, natural skin texture with visible pores and subtle imperfections, healthy glow, subsurface scattering, soft natural lighting, 85mm f/1.4, Canon R5, photorealistic portrait. ${DEFAULT_NEGATIVE_PROMPTS}`;
 
       const options: ImageGenerationOptions = {
         prompt: gridPrompt,
