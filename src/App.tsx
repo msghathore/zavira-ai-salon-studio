@@ -520,40 +520,120 @@ export default function App() {
       setRefPhotosToUse(selectedPhotos.length);
 
       const gridPrompt = `
-IMPORTANT: Use the attached reference image(s) showing a real salon as your PRIMARY REFERENCE for the environment, background, and room setup. Study the exact equipment, furniture, colors, lighting, walls, decor visible in the reference images.
+USE REFERENCE IMAGES AS PRIMARY GUIDE: Study the attached salon photos showing the exact room layout, equipment, furniture, walls, lighting, mirrors, and decor. Create a 4x4 grid where ALL 16 images show DIFFERENT clients in the EXACT SAME SALON ROOM receiving different ${selectedElement.name || 'salon services'}.
 
-Create a 4x4 grid (16 DIFFERENT people) with clients ACTIVELY RECEIVING ${selectedElement.name || 'salon services'} IN THE EXACT SALON ROOM SHOWN IN THE REFERENCE IMAGE(S).
+=== GRID STRUCTURE: 16 DIFFERENT CLIENTS, SAME SALON ===
+Create exactly 16 unique images. Each shows ONE client actively receiving a salon service IN THE EXACT SALON ROOM FROM THE REFERENCE PHOTOS.
 
-BACKGROUND & ENVIRONMENT (MUST MATCH REFERENCE IMAGES):
-- Use the EXACT same salon room layout and equipment from the reference images
-- Include visible background: exact same walls, furniture, lighting setup, mirrors, equipment as shown
-- Keep the exact same color palette, decor style, and professional aesthetic from the reference images
-- The salon environment should be clearly recognizable as the same location in all 16 cells
-- Show the specific service being performed: clients actively using/receiving the service at the stations/chairs shown
+=== PER-IMAGE REQUIREMENTS (RANDOMIZE ACROSS ALL 16) ===
 
-RANDOMIZE EACH OF THE 16 CLIENTS (ALL MUST BE DIFFERENT):
-- Skin tones: represent full spectrum (very fair, light, medium, tan, deep, very deep)
-- Ethnicities: Asian, African, Latin American, European, Middle Eastern, Indian, Multiracial
-- Ages: vary from early 20s to late 50s
-- Hair textures: straight, wavy, curly, coily, type 1-4 variations
-- Hair colors: natural shades (black, brown, dark brown, chestnut, auburn, blonde, gray, silver)
-- Expressions: genuine emotions (smiling, focused, relaxed, confident, happy, serene)
-- Camera angles: mix of perspectives (straight-on portrait, 3/4 angle, side profile, slightly from above, slightly from below)
-- Visible camera variation: different lighting characteristics suggesting different gear/lenses
-- Aperture/DOF variation: some sharp focus on face, some softer background blur (f/1.8-f/8 range implied)
-- Body positioning: natural seated/reclining poses with varying arm and hand placements
-- Clothing: diverse colors and styles, professional/spa-appropriate attire
+SUBJECT (CLIENT APPEARANCE):
+- Skin tones: Include very light, light, medium, olive, tan, deep, very deep (represent ALL ethnicities)
+- Ethnicities: Mix Asian, African, Black, Latin American, European, Middle Eastern, Indian, South Asian, Multiracial
+- Ages: Range from 20s, 30s, 40s, 50s, 60s
+- Hair types: Straight, wavy, curly, coily, kinky textures
+- Hair colors: Black, dark brown, medium brown, light brown, blonde, auburn, red, gray, silver
+- Facial hair: Some with beards, some clean-shaven, some with facial hair variations
+- Expressions: Smiling, peaceful, focused, confident, relaxed, joyful, serene, content
+- Eyes: Different eye colors, eye shapes, eye makeup variations
+- Distinguishing features: Freckles, beauty marks, glasses, piercings (natural variations)
 
-TECHNICAL CONSISTENCY (ACROSS ALL 16 CELLS):
-- Film: Kodak Portra 400 (warm, saturated, professional color film aesthetic)
-- Color grading: warm, slightly saturated professional salon photography style
-- Lighting: Match the ACTUAL lighting from the reference salon images (window light, salon fixtures, etc.)
-- Quality: Professional magazine editorial beauty photography (Vogue, Harper's Bazaar, salon portfolio style)
-- Skin: NATURAL with visible texture - pores, subtle freckles, minor blemishes, natural undertones, NOT retouched or AI-perfect
-- Sharpness: Professional focus on face with natural background
-- Overall aesthetic: High-end salon, luxury beauty photography, inviting and professional
+ACTION (SERVICE BEING PERFORMED):
+- Vary services across the 16 images: haircut, hair styling, hair coloring, hair treatment, blow dry, braiding, weaving, cutting, perming, straightening, etc.
+- Show active motion: hands moving, tools being used, client engaged in service
+- Different angles of the service (side view of haircut, overhead of coloring, etc.)
+- Vary which service station/chair is being used in the background
 
-CRITICAL: All 16 images should show different people in the SAME recognizable salon room performing the service. Background should be clearly the same location with visible furniture, equipment, mirrors, and decor from the reference images. This is one cohesive grid showing a busy day at THIS SPECIFIC SALON with many diverse clients.
+ENVIRONMENT (REFERENCE SALON ROOM):
+- CRITICAL: Use the EXACT salon room from reference images as background
+- Include ALL visible elements: exact same walls, exact same flooring, exact same mirrors, exact same chairs/stations
+- Keep exact same color palette and lighting from reference images
+- Professional salon equipment visible and used in service
+- Plants, decor, shelving, products if visible in reference
+- Same perspective/camera position relative to room layout
+- Show depth: background sharp or softly blurred depending on camera distance
+
+CLOTHING & STYLING:
+- Diverse outfit colors: jewel tones, pastels, neutrals, bright colors, patterned clothing
+- Variety of necklines and styles: shirts, tops, dresses, hoodies, blazers
+- Professional and casual mix appropriate for salon
+- Some wearing jewelry, some minimal accessories
+- Different hairstyles being shown in the service (short, medium, long, styled, natural)
+
+CINEMATOGRAPHY & TECHNICAL SPECIFICATIONS:
+
+CAMERAS (VARY ACROSS 16):
+- Mix of camera systems: Canon 5D Mark IV, Nikon Z9, Sony A1, Arri Alexa 35, Red Komodo, Fujifilm GFX100S
+- Variations create subtle style differences in each cell
+
+LENSES & FOCAL LENGTHS (VARY):
+- Wide variety: 24mm, 35mm, 50mm (normal perspective), 85mm (flattering portraits), 100mm (compression), 135mm (full body), Macro lenses
+- Anamorphic lenses suggested in some (subtle lens flare, stretched bokeh characteristics)
+
+APERTURE & DEPTH OF FIELD (VARY):
+- Wide open: f/1.2, f/1.4, f/1.8 (creamy background blur, sharp subject)
+- Moderate: f/2.8, f/4.0 (balance of subject and background)
+- Deeper: f/5.6, f/8.0 (more environmental context visible)
+- Ultra-shallow in some cells (razor-thin focus on eyes, creamy bokeh background)
+
+FILM STOCKS & COLOR GRADING (CONSISTENT AESTHETIC):
+- Primary stock: Kodak Portra 400 (warm, saturated, professional color look with fine grain)
+- Alternative cell variations:
+  * Fujicolor Pro 400H (slightly cooler, more vibrant greens and blues)
+  * Kodachrome 64 (ultra-saturated, warm, vintage professional look)
+  * Kodak Portra 160 (finer grain, slightly more muted)
+  * Ilford Pan 100 (if B&W reference) or color equivalent
+- Color grading: Warm color cast (matching salon skin tones), slightly lifted shadows, punchy midtones
+- Tonal range: Full dynamic range with visible shadow detail and highlights
+
+LIGHTING & EXPOSURE:
+- Natural window light mixed with professional salon lighting (key light + fill light setup)
+- Golden hour quality or salon's professional overhead + task lighting
+- Some with dramatic lighting (one key light side, subtle shadows)
+- Some with flat professional lighting (evenly lit)
+- Backlighting subtle in some (rim light on hair)
+- No harsh shadows on face; professional beauty lighting
+- Exposure: Slightly exposed to skin-tone friendly (not blown out highlights)
+
+FOCUS & SHARPNESS:
+- Tack-sharp focus on eyes and face
+- Professional focus transitions
+- Natural bokeh (circular aperture bokeh from real lenses)
+- Background sharpness varies by aperture
+
+COMPOSITION & FRAMING:
+- Vary shot types: close-up (shoulders up), medium (waist up), wider (seated full body visible)
+- Different angles: straight-on portrait, 3/4 view, side profile, slight high angle (flattering), slight low angle
+- Headroom varies naturally with composition
+- Rule of thirds applied naturally
+- Some with client looking at camera, some looking away at service action
+
+VISUAL AESTHETIC & MOOD:
+- Style: Professional beauty/salon photography inspired by Vogue, Harper's Bazaar, high-end salon portfolios
+- Tone: Inviting, professional, luxurious, calm, serene, beautiful
+- Feeling: High-end salon day, clients enjoying trusted service, comfortable environment
+- Quality level: Magazine editorial professional, not AI-perfect
+
+SKIN TEXTURE & REALISM:
+- NATURAL SKIN TEXTURE: Visible pores, fine lines, subtle imperfections
+- Freckles and beauty marks (natural distribution)
+- Minor blemishes, skin variations (realistic skin tone variations, undertones)
+- Skin: NOT retouched, NOT AI-perfect, NOT plastic/smooth
+- Natural complexion with visible depth and dimension
+- Real human skin with natural characteristics
+- Subtle makeup (some with more makeup, some minimal, varies)
+
+CRITICAL CONSISTENCY REQUIREMENTS:
+- ALL 16 cells: Same recognizable salon room (same walls, mirrors, equipment, lighting setup)
+- ALL 16 cells: Same general color palette and mood
+- ALL 16 cells: Kodak Portra 400 film stock aesthetic (warm, professional, fine grain)
+- ALL 16 cells: Professional magazine quality, beauty industry standard
+- ALL 16 cells: Natural skin with texture and imperfections
+- ALL 16 cells: Different people, different services, different clothing, different ethnicities, different ages
+- ALL 16 cells: One cohesive grid showing a day in THIS SPECIFIC SALON
+
+FINAL OUTPUT:
+One image containing a 4x4 grid. Each cell shows ONE different client actively receiving salon service IN THE EXACT SALON ROOM FROM THE REFERENCE IMAGES. All 16 should be instantly recognizable as the same salon location. High-end beauty photography aesthetic.
 
 ${DEFAULT_NEGATIVE_PROMPTS}`;
 
