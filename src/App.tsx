@@ -113,15 +113,15 @@ export default function App() {
             supabaseFetchPostedContent(userId),
           ]);
           
-          // Upgrade old prompts in Supabase elements
-          const oldPrompts = [
-            'Beautiful woman with stunning hairstyle in modern salon, professional beauty photography, glossy magazine look',
-            'Elegant nail art design on manicured hands, close-up professional beauty shot, intricate details',
-            'Artistic tattoo design on skin, professional tattoo photography, clean aesthetic'
+          // Upgrade old prompts in Supabase elements (check if starts with old pattern)
+          const oldPromptPatterns = [
+            'Beautiful woman with stunning hairstyle in modern salon',
+            'Elegant nail art design on manicured hands',
+            'Artistic tattoo design on skin'
           ];
           
           const upgradedElements = supabaseElements.map((e: any) => {
-            if (oldPrompts.includes(e.prompt)) {
+            if (oldPromptPatterns.some(pattern => e.prompt.startsWith(pattern))) {
               return { ...e, prompt: DEFAULT_PROMPTS[e.category] || e.prompt };
             }
             return e;
@@ -142,6 +142,11 @@ export default function App() {
             
             // Clean up old elements with numeric IDs or invalid categories
             const validCategories = ['hair', 'nail', 'tattoo'];
+            const oldPromptPatterns = [
+              'Beautiful woman with stunning hairstyle in modern salon',
+              'Elegant nail art design on manicured hands',
+              'Artistic tattoo design on skin'
+            ];
             const cleanedElements = localElements.filter((e: any) =>
               e.id &&
               e.id.includes('-') &&
@@ -149,14 +154,9 @@ export default function App() {
               e.name && e.prompt
             ).map((e: any) => {
               const baseCat = e.category.split('-')[0];
-              const oldPrompts = [
-                'Beautiful woman with stunning hairstyle in modern salon, professional beauty photography, glossy magazine look',
-                'Elegant nail art design on manicured hands, close-up professional beauty shot, intricate details',
-                'Artistic tattoo design on skin, professional tattoo photography, clean aesthetic'
-              ];
               
               let updatedPrompt = e.prompt;
-              if (oldPrompts.includes(e.prompt)) {
+              if (oldPromptPatterns.some(pattern => e.prompt.startsWith(pattern))) {
                 updatedPrompt = DEFAULT_PROMPTS[baseCat] || e.prompt;
               }
 
@@ -213,14 +213,14 @@ export default function App() {
   useEffect(() => {
     if (elements.length > 0 && !selectedElement) {
       const firstElement = elements[0];
-      const oldPrompts = [
-        'Beautiful woman with stunning hairstyle in modern salon, professional beauty photography, glossy magazine look',
-        'Elegant nail art design on manicured hands, close-up professional beauty shot, intricate details',
-        'Artistic tattoo design on skin, professional tattoo photography, clean aesthetic'
+      const oldPromptPatterns = [
+        'Beautiful woman with stunning hairstyle in modern salon',
+        'Elegant nail art design on manicured hands',
+        'Artistic tattoo design on skin'
       ];
       
       let upgradedElement = { ...firstElement };
-      if (oldPrompts.includes(firstElement.prompt)) {
+      if (oldPromptPatterns.some(pattern => firstElement.prompt.startsWith(pattern))) {
         upgradedElement.prompt = DEFAULT_PROMPTS[firstElement.category] || firstElement.prompt;
       }
       
@@ -464,22 +464,22 @@ export default function App() {
 
   // Select element for generation
   const handleSelectElement = (element: Element) => {
-    // Auto-upgrade old prompts
-    const oldPrompts = [
-      'Beautiful woman with stunning hairstyle in modern salon, professional beauty photography, glossy magazine look',
-      'Elegant nail art design on manicured hands, close-up professional beauty shot, intricate details',
-      'Artistic tattoo design on skin, professional tattoo photography, clean aesthetic'
+    // Auto-upgrade old prompts (check if starts with old pattern)
+    const oldPromptPatterns = [
+      'Beautiful woman with stunning hairstyle in modern salon',
+      'Elegant nail art design on manicured hands',
+      'Artistic tattoo design on skin'
     ];
     
     let upgradedElement = { ...element };
-    if (oldPrompts.includes(element.prompt)) {
+    if (oldPromptPatterns.some(pattern => element.prompt.startsWith(pattern))) {
       upgradedElement.prompt = DEFAULT_PROMPTS[element.category] || element.prompt;
       // Update in elements array
       const updatedElements = elements.map(e => 
         e.id === element.id ? upgradedElement : e
       );
       setElements(updatedElements);
-      localStorage.setItem('zavira_elements', JSON.stringify(updatedElements));
+      localStorage.setItem('zira_elements', JSON.stringify(updatedElements));
     }
     
     setSelectedElement(upgradedElement);
