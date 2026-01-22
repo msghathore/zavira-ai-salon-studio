@@ -520,31 +520,40 @@ export default function App() {
       setRefPhotosToUse(selectedPhotos.length);
 
       const gridPrompt = `
-Create a 4x4 grid with exactly 16 DIFFERENT clients actively getting ${selectedElement.name || 'salon services'}
-IN a professional salon. The salon room is set up with professional ${selectedElement.category === 'hair' ? 'styling chairs, mirrors, and salon equipment' : selectedElement.category === 'nail' ? 'nail stations with lamps and tools' : selectedElement.category === 'tattoo' ? 'tattoo studio bed/chair with professional setup' : selectedElement.category === 'massage' ? 'massage therapy beds and spa setup' : 'facial treatment room with professional setup'}.
-Clients are sitting or lying down comfortably ACTIVELY RECEIVING the service.
+IMPORTANT: Use the attached reference image(s) showing a real salon as your PRIMARY REFERENCE for the environment, background, and room setup. Study the exact equipment, furniture, colors, lighting, walls, decor visible in the reference images.
 
-RANDOMIZE EACH OF THE 16 CLIENTS - ALL DIFFERENT:
-- Skin tones: vary from very light to deep/dark (represent all ethnicities)
-- Ethnicities: diverse - include Asian, African, Latin American, European, Middle Eastern, Indian, and mixed heritage
-- Ages: range from 20s to 50s, show different age groups
-- Hair types: straight, wavy, curly, coily, different colors (black, brown, blonde, red, gray), different lengths
-- Expressions: some smiling, some relaxed, some focused, natural expressions
-- Camera perspective: vary between different angles (some head-on, some 3/4 view, some from side)
-- Camera equipment variation: shot with different brands (Canon, Nikon, Sony implied by slight variations)
-- Lens effects: vary shallow depth of field (f/1.8, f/2.8) to deeper focus (f/5.6, f/8)
-- Body positioning: different arm positions, hand placements, body angles
-- Clothing: different colors and styles appropriate for salon
+Create a 4x4 grid (16 DIFFERENT people) with clients ACTIVELY RECEIVING ${selectedElement.name || 'salon services'} IN THE EXACT SALON ROOM SHOWN IN THE REFERENCE IMAGE(S).
 
-CONSISTENT ACROSS ALL 16:
-- Film stock: Kodak Portra 400 (consistent professional salon color film look)
-- Lighting: Professional salon lighting mixed with soft natural window light
-- Quality: Professional magazine editorial quality, beauty industry standard
-- Skin texture: NATURAL skin with visible texture, freckles, minor imperfections, realistic skin - NOT AI-perfect or overly smoothed
-- Background: The actual salon room visible with professional equipment, mirrors, plants, professional decor
-- Service: All 16 clients actively receiving the ${selectedElement.category} service - can see the action happening
+BACKGROUND & ENVIRONMENT (MUST MATCH REFERENCE IMAGES):
+- Use the EXACT same salon room layout and equipment from the reference images
+- Include visible background: exact same walls, furniture, lighting setup, mirrors, equipment as shown
+- Keep the exact same color palette, decor style, and professional aesthetic from the reference images
+- The salon environment should be clearly recognizable as the same location in all 16 cells
+- Show the specific service being performed: clients actively using/receiving the service at the stations/chairs shown
 
-MOOD: Professional, happy, beautiful salon environment, clients enjoying and trusting the service, high-end salon feel.
+RANDOMIZE EACH OF THE 16 CLIENTS (ALL MUST BE DIFFERENT):
+- Skin tones: represent full spectrum (very fair, light, medium, tan, deep, very deep)
+- Ethnicities: Asian, African, Latin American, European, Middle Eastern, Indian, Multiracial
+- Ages: vary from early 20s to late 50s
+- Hair textures: straight, wavy, curly, coily, type 1-4 variations
+- Hair colors: natural shades (black, brown, dark brown, chestnut, auburn, blonde, gray, silver)
+- Expressions: genuine emotions (smiling, focused, relaxed, confident, happy, serene)
+- Camera angles: mix of perspectives (straight-on portrait, 3/4 angle, side profile, slightly from above, slightly from below)
+- Visible camera variation: different lighting characteristics suggesting different gear/lenses
+- Aperture/DOF variation: some sharp focus on face, some softer background blur (f/1.8-f/8 range implied)
+- Body positioning: natural seated/reclining poses with varying arm and hand placements
+- Clothing: diverse colors and styles, professional/spa-appropriate attire
+
+TECHNICAL CONSISTENCY (ACROSS ALL 16 CELLS):
+- Film: Kodak Portra 400 (warm, saturated, professional color film aesthetic)
+- Color grading: warm, slightly saturated professional salon photography style
+- Lighting: Match the ACTUAL lighting from the reference salon images (window light, salon fixtures, etc.)
+- Quality: Professional magazine editorial beauty photography (Vogue, Harper's Bazaar, salon portfolio style)
+- Skin: NATURAL with visible texture - pores, subtle freckles, minor blemishes, natural undertones, NOT retouched or AI-perfect
+- Sharpness: Professional focus on face with natural background
+- Overall aesthetic: High-end salon, luxury beauty photography, inviting and professional
+
+CRITICAL: All 16 images should show different people in the SAME recognizable salon room performing the service. Background should be clearly the same location with visible furniture, equipment, mirrors, and decor from the reference images. This is one cohesive grid showing a busy day at THIS SPECIFIC SALON with many diverse clients.
 
 ${DEFAULT_NEGATIVE_PROMPTS}`;
 
@@ -1210,6 +1219,33 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
                     {isGeneratingGrid ? '⏳ Generating...' : '✨ Generate 4x4 Grid ($0.05)'}
                   </button>
                 </div>
+              </div>
+            )}
+
+            {/* Debug Info */}
+            {selectedElement && (
+              <div style={{
+                background: 'rgba(255,165,0,0.1)',
+                borderRadius: '12px',
+                padding: '12px',
+                border: '1px solid rgba(255,165,0,0.3)',
+                marginBottom: '16px',
+                fontSize: '12px',
+              }}>
+                <div style={{ fontWeight: 600, marginBottom: '8px' }}>🔍 Debug Info</div>
+                <div>Elements in "{selectedElement.category}" category: {elements.filter(el => el.category === selectedElement.category).length}</div>
+                <div>Total photos available: {elements.filter(el => el.category === selectedElement.category).flatMap(el => el.photoUrls).length}</div>
+                <div>Photos to be used (max 10): {getRefPhotoCount()}</div>
+                {getRefPhotoCount() > 0 && (
+                  <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255,165,0,0.2)' }}>
+                    <div style={{ fontWeight: 600, marginBottom: '4px' }}>Sample URLs:</div>
+                    {elements.filter(el => el.category === selectedElement.category).flatMap(el => el.photoUrls).slice(0, 2).map((url, i) => (
+                      <div key={i} style={{ fontSize: '10px', wordBreak: 'break-all', color: 'rgba(255,165,0,0.8)', marginBottom: '2px' }}>
+                        {i+1}. {url.substring(0, 80)}...
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
