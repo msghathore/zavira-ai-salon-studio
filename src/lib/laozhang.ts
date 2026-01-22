@@ -163,6 +163,24 @@ function parseDataUrl(dataUrl: string): { mimeType: string; data: string } | nul
   return null;
 }
 
+async function fetchImageAsBase64(url: string): Promise<{ mimeType: string; data: string } | null> {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      console.error('Failed to fetch image:', response.status, response.statusText);
+      return null;
+    }
+    const blob = await response.blob();
+    const arrayBuffer = await blob.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString('base64');
+    const mimeType = blob.type || 'image/jpeg';
+    return { mimeType, data: base64 };
+  } catch (error) {
+    console.error('Error fetching image:', error);
+    return null;
+  }
+}
+
 // Helper to convert aspect ratio to OpenAI Images API size
 function getOpenAISizeFromAspectRatio(aspectRatio: string): string {
   switch (aspectRatio) {
@@ -212,6 +230,16 @@ export async function generateImage(
                 data: imageData.data,
               }
             });
+          } else {
+            const fetchedImage = await fetchImageAsBase64(refImage);
+            if (fetchedImage) {
+              parts.push({
+                inline_data: {
+                  mime_type: fetchedImage.mimeType,
+                  data: fetchedImage.data,
+                }
+              });
+            }
           }
         }
       }
