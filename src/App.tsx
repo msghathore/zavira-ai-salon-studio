@@ -449,78 +449,10 @@ export default function App() {
     return Math.min(10, categoryPhotos.length);
   };
 
-  // Helper to get default prompt for category
-  const getDefaultPromptForCategory = (category: string) => {
-    const oldPrompts = [
-      'Beautiful woman with stunning hairstyle in modern salon, professional beauty photography, glossy magazine look',
-      'Elegant nail art design on manicured hands, close-up professional beauty shot, intricate details',
-      'Artistic tattoo design on skin, professional tattoo photography, clean aesthetic'
-    ];
-    if (oldPrompts.includes(DEFAULT_PROMPTS[category] || '')) {
-      return DEFAULT_PROMPTS[category] || '';
-    }
-    return DEFAULT_PROMPTS[category] || '';
-  };
-
-  // Select element for generation
-  const handleSelectElement = (element: Element) => {
-    // Auto-upgrade old prompts (check if starts with old pattern)
-    const oldPromptPatterns = [
-      'Beautiful woman with stunning hairstyle in modern salon',
-      'Elegant nail art design on manicured hands',
-      'Artistic tattoo design on skin'
-    ];
-    
-    let upgradedElement = { ...element };
-    if (oldPromptPatterns.some(pattern => element.prompt.startsWith(pattern))) {
-      upgradedElement.prompt = DEFAULT_PROMPTS[element.category] || element.prompt;
-      // Update in elements array
-      const updatedElements = elements.map(e => 
-        e.id === element.id ? upgradedElement : e
-      );
-      setElements(updatedElements);
-      localStorage.setItem('zira_elements', JSON.stringify(updatedElements));
-    }
-    
-    setSelectedElement(upgradedElement);
-    setSelectedCategory(upgradedElement.category);
-    setGridUrl(null);
-    setGridCells([]);
-    setRefPhotosToUse(getRefPhotoCount());
-    setGridPromptText(upgradedElement.prompt);
-  };
-
-  // Generate grid
-  const handleGenerateGrid = async () => {
-    if (!LAOZHANG_API_KEY) {
-      setError('Lao Zhang API key not configured');
-      return;
-    }
-    if (!selectedElement) {
-      setError('Please select an element');
-      return;
-    }
-
-    const prompt = gridPromptText || selectedElement.prompt;
-
-    setIsGeneratingGrid(true);
-    setError(null);
-    
-    try {
-      const client = createLaoZhangClient(LAOZHANG_API_KEY);
-
-      // Get all photos from the selected category (from all elements)
-      const categoryPhotos = elements
-        .filter(el => el.category === selectedElement.category)
-        .flatMap(el => el.photoUrls);
-      
-      // Randomly select exactly 10 photos
-      const shuffled = categoryPhotos.sort(() => 0.5 - Math.random());
-      const selectedPhotos = shuffled.slice(0, 10);
-      setRefPhotosToUse(selectedPhotos.length);
-
-      const gridPrompt = `
-USE REFERENCE IMAGES AS PRIMARY GUIDE: Study the attached salon photos showing the exact room layout, equipment, furniture, walls, lighting, mirrors, and decor. Create a 4x4 grid where ALL 16 images show DIFFERENT clients in the EXACT SAME SALON ROOM receiving different ${selectedElement.name || 'salon services'}.
+  // Helper to get detailed professional grid prompt
+  const getDetailedGridPrompt = (elementName: string) => {
+    return `
+USE REFERENCE IMAGES AS PRIMARY GUIDE: Study the attached salon photos showing the exact room layout, equipment, furniture, walls, lighting, mirrors, and decor. Create a 4x4 grid where ALL 16 images show DIFFERENT clients in the EXACT SAME SALON ROOM receiving different ${elementName || 'salon services'}.
 
 === GRID STRUCTURE: 16 DIFFERENT CLIENTS, SAME SALON ===
 Create exactly 16 unique images. Each shows ONE client actively receiving a salon service IN THE EXACT SALON ROOM FROM THE REFERENCE PHOTOS.
@@ -636,9 +568,84 @@ FINAL OUTPUT:
 One image containing a 4x4 grid. Each cell shows ONE different client actively receiving salon service IN THE EXACT SALON ROOM FROM THE REFERENCE IMAGES. All 16 should be instantly recognizable as the same salon location. High-end beauty photography aesthetic.
 
 ${DEFAULT_NEGATIVE_PROMPTS}`;
+  };
+
+  // Helper to get default prompt for category
+  const getDefaultPromptForCategory = (category: string) => {
+    const oldPrompts = [
+      'Beautiful woman with stunning hairstyle in modern salon, professional beauty photography, glossy magazine look',
+      'Elegant nail art design on manicured hands, close-up professional beauty shot, intricate details',
+      'Artistic tattoo design on skin, professional tattoo photography, clean aesthetic'
+    ];
+    if (oldPrompts.includes(DEFAULT_PROMPTS[category] || '')) {
+      return DEFAULT_PROMPTS[category] || '';
+    }
+    return DEFAULT_PROMPTS[category] || '';
+  };
+
+  // Select element for generation
+  const handleSelectElement = (element: Element) => {
+    // Auto-upgrade old prompts (check if starts with old pattern)
+    const oldPromptPatterns = [
+      'Beautiful woman with stunning hairstyle in modern salon',
+      'Elegant nail art design on manicured hands',
+      'Artistic tattoo design on skin'
+    ];
+    
+    let upgradedElement = { ...element };
+    if (oldPromptPatterns.some(pattern => element.prompt.startsWith(pattern))) {
+      upgradedElement.prompt = DEFAULT_PROMPTS[element.category] || element.prompt;
+      // Update in elements array
+      const updatedElements = elements.map(e => 
+        e.id === element.id ? upgradedElement : e
+      );
+      setElements(updatedElements);
+      localStorage.setItem('zira_elements', JSON.stringify(updatedElements));
+    }
+    
+    setSelectedElement(upgradedElement);
+    setSelectedCategory(upgradedElement.category);
+    setGridUrl(null);
+    setGridCells([]);
+    setRefPhotosToUse(getRefPhotoCount());
+    // Set the detailed professional prompt for editing
+    setGridPromptText(getDetailedGridPrompt(upgradedElement.name));
+  };
+
+  // Generate grid
+  const handleGenerateGrid = async () => {
+    if (!LAOZHANG_API_KEY) {
+      setError('Lao Zhang API key not configured');
+      return;
+    }
+    if (!selectedElement) {
+      setError('Please select an element');
+      return;
+    }
+
+    const prompt = gridPromptText || selectedElement.prompt;
+
+    setIsGeneratingGrid(true);
+    setError(null);
+    
+    try {
+      const client = createLaoZhangClient(LAOZHANG_API_KEY);
+
+      // Get all photos from the selected category (from all elements)
+      const categoryPhotos = elements
+        .filter(el => el.category === selectedElement.category)
+        .flatMap(el => el.photoUrls);
+      
+      // Randomly select exactly 10 photos
+      const shuffled = categoryPhotos.sort(() => 0.5 - Math.random());
+      const selectedPhotos = shuffled.slice(0, 10);
+      setRefPhotosToUse(selectedPhotos.length);
+
+      // Use user's edited prompt if provided, otherwise use the default detailed prompt
+      const finalPrompt = gridPromptText || getDetailedGridPrompt(selectedElement.name);
 
       const options: ImageGenerationOptions = {
-        prompt: gridPrompt,
+        prompt: finalPrompt,
         model: 'nano-banana-pro',
         imageSize: '4K',
         aspectRatio: '21:9',
