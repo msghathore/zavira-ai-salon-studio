@@ -435,11 +435,11 @@ export default function App() {
         .filter(el => el.category === selectedElement.category)
         .flatMap(el => el.photoUrls);
       
-      // Randomly select up to 10 photos
+      // Randomly select exactly 10 photos
       const shuffled = categoryPhotos.sort(() => 0.5 - Math.random());
       const selectedPhotos = shuffled.slice(0, 10);
 
-      const gridPrompt = `${prompt}. Kodak Portra 400 film look, natural skin texture with visible pores and subtle imperfections, healthy glow, subsurface scattering, soft natural lighting, 85mm f/1.4, Canon R5, photorealistic portrait. ${DEFAULT_NEGATIVE_PROMPTS}`;
+      const gridPrompt = `${prompt}. Close-up portrait shots, medium shots, and wide shots. Various camera angles including eye level, high angle, low angle, and overhead. Shot with different lenses including 35mm, 50mm, 85mm, and 100mm macro. Kodak Portra 400, Fuji Pro 400H, and Ilford HP5 film stock. Soft natural lighting, professional beauty photography, magazine editorial quality. ${DEFAULT_NEGATIVE_PROMPTS}`;
 
       const options: ImageGenerationOptions = {
         prompt: gridPrompt,
@@ -541,7 +541,7 @@ export default function App() {
             cell.prompt,
             previousImages,
             gridUrl || undefined
-          ) + '. Kodak Portra 400 film look, natural skin texture with visible pores and subtle imperfections, healthy glow, subsurface scattering, soft natural lighting, 85mm f/1.4, Canon R5, photorealistic portrait.';
+          ) + '. Close-up portrait, various camera angles, 35mm 50mm 85mm lenses, Kodak Portra 400 film, soft natural lighting, professional beauty photography.';
 
           const options: ImageGenerationOptions = {
             prompt: enhancedPrompt,
