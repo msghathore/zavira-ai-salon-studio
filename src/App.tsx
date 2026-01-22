@@ -83,6 +83,7 @@ export default function App() {
   const [supabaseReady, setSupabaseReady] = useState(false);
   const [selectedPostImage, setSelectedPostImage] = useState<{url: string, letter: string, generationId: string} | null>(null);
   const [refPhotosToUse, setRefPhotosToUse] = useState<number>(0);
+  const [gridPromptText, setGridPromptText] = useState<string>('');
   const gridImageRef = useRef<HTMLDivElement>(null);
   const userIdRef = useRef<string>(getUserId());
   
@@ -112,7 +113,21 @@ export default function App() {
             supabaseFetchPostedContent(userId),
           ]);
           
-          if (supabaseElements.length > 0) setElements(supabaseElements);
+          // Upgrade old prompts in Supabase elements
+          const oldPrompts = [
+            'Beautiful woman with stunning hairstyle in modern salon, professional beauty photography, glossy magazine look',
+            'Elegant nail art design on manicured hands, close-up professional beauty shot, intricate details',
+            'Artistic tattoo design on skin, professional tattoo photography, clean aesthetic'
+          ];
+          
+          const upgradedElements = supabaseElements.map((e: any) => {
+            if (oldPrompts.includes(e.prompt)) {
+              return { ...e, prompt: DEFAULT_PROMPTS[e.category] || e.prompt };
+            }
+            return e;
+          });
+          
+          if (upgradedElements.length > 0) setElements(upgradedElements);
           if (supabaseGenerations.length > 0) setGenerations(supabaseGenerations);
           if (supabasePosted.length > 0) setPostedContent(supabasePosted);
           setSupabaseReady(true);
@@ -193,6 +208,28 @@ export default function App() {
     
     loadData();
   }, []);
+
+  // Auto-select first element after elements load and upgrade prompt
+  useEffect(() => {
+    if (elements.length > 0 && !selectedElement) {
+      const firstElement = elements[0];
+      const oldPrompts = [
+        'Beautiful woman with stunning hairstyle in modern salon, professional beauty photography, glossy magazine look',
+        'Elegant nail art design on manicured hands, close-up professional beauty shot, intricate details',
+        'Artistic tattoo design on skin, professional tattoo photography, clean aesthetic'
+      ];
+      
+      let upgradedElement = { ...firstElement };
+      if (oldPrompts.includes(firstElement.prompt)) {
+        upgradedElement.prompt = DEFAULT_PROMPTS[firstElement.category] || firstElement.prompt;
+      }
+      
+      setSelectedElement(upgradedElement);
+      setSelectedCategory(upgradedElement.category);
+      setRefPhotosToUse(getRefPhotoCount());
+      setGridPromptText(upgradedElement.prompt);
+    }
+  }, [elements.length]);
 
   // Save elements to both Supabase and localStorage
   const syncElements = async (newElements: Element[]) => {
@@ -450,6 +487,7 @@ export default function App() {
     setGridUrl(null);
     setGridCells([]);
     setRefPhotosToUse(getRefPhotoCount());
+    setGridPromptText(upgradedElement.prompt);
   };
 
   // Generate grid
@@ -463,8 +501,7 @@ export default function App() {
       return;
     }
 
-    const promptInput = document.getElementById('gridPrompt') as HTMLTextAreaElement;
-    const prompt = promptInput?.value || selectedElement.prompt;
+    const prompt = gridPromptText || selectedElement.prompt;
 
     setIsGeneratingGrid(true);
     setError(null);
@@ -1053,7 +1090,8 @@ export default function App() {
                     </div>
                     <textarea
                       id="gridPrompt"
-                      defaultValue={selectedElement.prompt}
+                      value={gridPromptText}
+                      onChange={(e) => setGridPromptText(e.target.value)}
                       placeholder="Describe what you want to generate..."
                       style={{
                         width: '100%',
