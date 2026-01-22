@@ -177,10 +177,22 @@ async function fetchImageAsBase64(url: string): Promise<{ mimeType: string; data
       return null;
     }
     const blob = await response.blob();
-    const arrayBuffer = await blob.arrayBuffer();
-    const base64 = Buffer.from(arrayBuffer).toString('base64');
     const mimeType = blob.type || 'image/jpeg';
-    return { mimeType, data: base64 };
+    
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64data = reader.result as string;
+        // base64data is "data:image/jpeg;base64,...."
+        const base64 = base64data.split(',')[1];
+        resolve({ mimeType, data: base64 });
+      };
+      reader.onerror = () => {
+        console.error('FileReader error');
+        resolve(null);
+      };
+      reader.readAsDataURL(blob);
+    });
   } catch (error) {
     console.error('Error fetching image:', error);
     return null;
@@ -224,12 +236,17 @@ export async function generateImage(
     if (config.useNativeFormat) {
       const actualSize = config.supports4K ? imageSize : (imageSize === '4K' ? '2K' : imageSize);
       const parts: Array<{ text?: string; inline_data?: { mime_type: string; data: string } }> = [];
-      parts.push({ text: prompt });
-
+      
+      // Images must come BEFORE the text for best style reference in Gemini
       if (referenceImages && referenceImages.length > 0) {
-        for (const refImage of referenceImages) {
+        console.log('📸 Processing reference images:', referenceImages.length);
+        for (let i = 0; i < referenceImages.length; i++) {
+          const refImage = referenceImages[i];
+          console.log(`  Image ${i + 1}/${referenceImages.length}:`, refImage.substring(0, 80));
+          
           const imageData = parseDataUrl(refImage);
           if (imageData) {
+            console.log(`  ✅ Parsed as data URL (${imageData.mimeType})`);
             parts.push({
               inline_data: {
                 mime_type: imageData.mimeType,
@@ -237,17 +254,24 @@ export async function generateImage(
               }
             });
           } else {
+            console.log(`  🌐 Fetching from URL...`);
             const fetchedImage = await fetchImageAsBase64(refImage);
             if (fetchedImage) {
+              console.log(`  ✅ Fetched and converted (${fetchedImage.mimeType}, ${fetchedImage.data.length} chars)`);
               parts.push({
                 inline_data: {
                   mime_type: fetchedImage.mimeType,
                   data: fetchedImage.data,
                 }
               });
+            } else {
+              console.log(`  ❌ Failed to fetch`);
             }
           }
         }
+        console.log(`📸 Total images added to parts: ${parts.length}`);
+      } else {
+        console.log('⚠️ No reference images provided');
       }
 
       if (styleReference) {
@@ -261,6 +285,13 @@ export async function generateImage(
           });
         }
       }
+
+      // Add prompt text last with reference instruction if images are provided
+      const finalPrompt = (referenceImages && referenceImages.length > 0)
+        ? `Using the attached reference images as a guide for visual style, lighting, environment, and subject: ${prompt}`
+        : prompt;
+        
+      parts.push({ text: finalPrompt });
 
       const requestBody = {
         contents: [{ parts: parts }],
@@ -279,7 +310,10 @@ export async function generateImage(
         aspectRatio,
         prompt: prompt.substring(0, 100) + '...',
         hasReferenceImage: referenceImages && referenceImages.length > 0,
-        referenceImageCount: referenceImages?.length || 0
+        referenceImageCount: referenceImages?.length || 0,
+        totalParts: parts.length,
+        imageParts: parts.filter(p => p.inline_data).length,
+        textParts: parts.filter(p => p.text).length
       });
 
       response = await fetch(`https://api.laozhang.ai/v1beta/models/${config.apiModelId}:generateContent`, {
