@@ -1,0 +1,347 @@
+# 🎨 ZAVIRA AI SALON STUDIO - PROJECT BRIEF
+
+**Last Updated**: 2026-01-22
+**Status**: ⚠️ NEEDS FIXES (Grid generation not referencing salon properly)
+
+---
+
+## 🎯 PROJECT VISION
+
+**Purpose**: AI-powered salon content generator that creates client photos in YOUR salon, then posts to social media automatically.
+
+**Workflow**:
+```
+1. Upload salon room photos (tattoo room, hair salon, nail station, massage room, facial room)
+   ↓
+2. Click category (Hair/Nail/Tattoo/Massage/Facial)
+   ↓
+3. Generate ONE image with 4x4 grid (16 different clients getting services in YOUR salon)
+   ↓
+4. Select any cells you want (say 4 cells)
+   ↓
+5. Generate 4 full 4K 1:1 images (one per selected cell, exactly matching grid)
+   ↓
+6. AI generates unique captions for each image
+   ↓
+7. Add music + hashtags + captions
+   ↓
+8. Auto-post to Instagram, TikTok, Facebook via Make.com
+```
+
+---
+
+## 📊 CURRENT STATE vs DESIRED STATE
+
+### Current State
+✅ Photo upload works (Supabase)
+✅ Elements system stores room images
+✅ UI shows 4x4 grid overlay
+✅ Grid generation triggers
+❌ **Images show generic clients, NOT in your salon**
+❌ Prompt doesn't say "this is MY salon"
+❌ Room background not influencing generation
+❌ No unique AI captions
+❌ Make.com not fully setup
+
+### Desired State
+✅ Grid shows 16 clients actively getting services IN your salon
+✅ Your salon room visible in background
+✅ 16 different variations (skin tones, ethnicities, camera angles, etc.)
+✅ Each cell can be selected
+✅ Selected cells generate full 4K images
+✅ Each full image has unique AI-generated caption
+✅ Captions are creative/salon-style (not generic)
+✅ Music + hashtags ready
+✅ Auto-post via Make.com
+
+---
+
+## 🔧 THE CORE PROBLEM
+
+### What's Broken
+The **prompt** sent to Gemini is too generic. It says:
+```
+"4x4 grid of 16 women with different hairstyles..."
+```
+
+Should say:
+```
+"4x4 grid of 16 DIFFERENT clients actively getting [HAIR SERVICE]
+IN a professional salon. The salon has [YOUR ROOM DESCRIPTION].
+Clients sitting on professional salon chairs. Randomize: skin tones,
+ethnicities, ages, hair colors, hair lengths, camera brands (Canon/Nikon/Sony),
+prime lenses (35/50/85/100mm), apertures (f/1.8-f/8), focal lengths.
+Use Kodak Portra 400 film stock. Natural skin with texture, freckles,
+minor imperfections. Magazine quality professional salon photography."
+```
+
+### Why This Matters
+- Gemini doesn't know it should put clients IN your salon
+- Room images uploaded but not described in prompt
+- Results look like generic stock photos, not your salon
+- No context about the service being performed
+
+---
+
+## 📋 KEY REQUIREMENTS (YOUR SPECIFICATIONS)
+
+### Grid Generation
+- ✅ ONE single API call ($0.05)
+- ✅ ONE image with 4x4 grid visible
+- ✅ 16 different clients/variations in ONE image
+- ✅ YOUR salon room clearly visible
+- ✅ Clients actively getting service (sitting on chair, at nail station, etc.)
+- ✅ Wide aspect ratio (21:9 or ultra-wide)
+- ✅ Randomized:
+  - Skin tones & ethnicities
+  - Hair colors, lengths, styles
+  - Age variations
+  - Camera brands (Canon, Nikon, Sony, etc.)
+  - Lens types (35mm, 50mm, 85mm, 100mm, macro)
+  - Aperture values (f/1.8, f/2.8, f/5.6, f/8)
+  - Focal lengths
+  - Camera angles
+- ✅ CONSISTENT: Kodak Portra 400 film stock (all 16 cells)
+- ✅ Natural skin with imperfections (texture, freckles, minor blemishes)
+- ✅ Professional salon/magazine quality
+
+### Full Image Generation (Selected Cells)
+- ✅ User selects cells (say 4)
+- ✅ Generate 4K 1:1 (square) images
+- ✅ One per selected cell ($0.05 each)
+- ✅ EXACT match to what's shown in grid cell
+- ✅ Full body or upper body shot (not just face)
+- ✅ Clear service context (client getting haircut, nails done, tattoo, etc.)
+
+### Captions
+- ✅ Generated ONLY for selected full images (not for grid)
+- ✅ Unique to each image (analyze what's shown)
+- ✅ Creative/trendy salon style (not generic)
+- ✅ Examples:
+  - "Dimensional balayage highlights with soft waves - total transformation ✨"
+  - "Bold matte black nails with rose gold accents 💅"
+  - "Geometric linework tattoo design on forearm - custom artwork"
+- ✅ Use Gemini free tier API (free via AI Studio)
+
+### Music & Hashtags
+- ✅ Audius API for trending music
+- ✅ User selects music
+- ✅ Auto-generated or manual hashtags
+- ✅ Creative hashtag suggestions
+
+### Social Media Posting (Make.com)
+- ✅ Auto-post to Instagram, TikTok, Facebook
+- ✅ Send: Image + Caption + Hashtags + Music
+- ✅ Setup webhook in Make.com scenario
+- ✅ Handle success/error responses
+
+---
+
+## 💰 COST STRUCTURE
+
+| Action | Cost | Notes |
+|--------|------|-------|
+| Grid Generation | $0.05 | 1 API call for whole 4x4 grid |
+| Full Image (per cell) | $0.05 | $0.20 for 4 cells |
+| Captions | FREE | Gemini free tier |
+| Music | FREE | Audius API |
+| Hashtags | FREE | Generated by AI |
+| **Total Example** | **$0.25** | 1 grid + 4 full images + captions |
+
+**Monthly Budget Example**: 100 grids = $5 (plenty of room)
+
+---
+
+## 🏗️ HOW THE SYSTEM WORKS
+
+### 1. Elements System (Room Backgrounds)
+```
+User uploads room photos per category:
+  Hair Category → Hair salon chair photos
+  Nail Category → Nail station photos
+  Tattoo Category → Tattoo room/bed photos
+  Massage Category → Massage room/bed photos
+  Facial Category → Facial treatment room photos
+
+When generating grid for "Hair":
+  → Use hair room photos as reference
+  → Gemini sees: "This is what the salon looks like"
+  → Generates 16 clients in that actual room
+```
+
+### 2. Grid Generation Flow
+```
+1. User selects category (Hair/Nail/Tattoo/etc.)
+2. System fetches up to 10 random room images from Elements
+3. Constructs smart prompt with room description
+4. Sends to Gemini with:
+   - Smart prompt (says "IN this salon")
+   - Room images as reference
+   - Randomization instructions
+5. Receives ONE 4x4 grid image
+6. Shows grid with A-P labels overlay
+7. Stores generation in database
+```
+
+### 3. Cell Selection & Full Image Generation
+```
+1. User views 4x4 grid
+2. User clicks cells to select (say 4 cells)
+3. For each selected cell:
+   - Extract cell prompt
+   - Regenerate as full 4K 1:1 image
+   - Use same room reference
+   - Ensure exact match to grid
+4. Generate unique caption for each image
+5. Store full images + captions
+```
+
+### 4. Posting Flow
+```
+1. User selects full image to post
+2. Add/edit caption (AI-generated or custom)
+3. Select music from Audius
+4. Add/edit hashtags
+5. Choose platform (Instagram/TikTok/Facebook)
+6. Click Post
+7. Send to Make.com webhook:
+   {
+     "imageUrl": "...",
+     "caption": "...",
+     "hashtags": ["#tag1", "#tag2"],
+     "musicUrl": "...",
+     "platform": "instagram"
+   }
+8. Make.com scenario handles posting
+9. Track in "Posted Content" database
+```
+
+---
+
+## 📁 KEY FILES & WHAT THEY DO
+
+### Frontend (React)
+- **src/App.tsx** (Main app)
+  - `handleGenerateGrid()` - Generates 4x4 grid (line 494)
+  - `handleGenerateSelectedCells()` - Generates full images (line 593)
+  - `PostSection()` - Captions, music, hashtags, posting (line 1602)
+
+- **src/components/PhotoUploader.tsx**
+  - Upload room/background photos
+
+### Backend / API Integration
+- **src/lib/laozhang.ts**
+  - Gemini API calls
+  - Image generation functions
+  - Model config (nano-banana-pro)
+
+- **src/lib/supabase.ts**
+  - Store Elements (room photos)
+  - Store Generations (grids)
+  - Store PostedContent
+
+- **src/lib/audius.ts**
+  - Trending music from Audius API
+
+### Data
+- **src/data/categories.ts**
+  - Service categories (Hair, Nail, Tattoo, Massage, Facial)
+  - Default prompts
+  - Cell labels (A-P)
+
+---
+
+## 🚨 ISSUES TO FIX
+
+### Issue 1: Prompt Doesn't Reference Salon (CRITICAL)
+**Current**: Generic prompt
+**Fix**: Include room image description + explicit "IN this salon" language
+
+### Issue 2: Room Images Not Influencing Generation (CRITICAL)
+**Current**: Room images uploaded but not used
+**Fix**: Pass room images as Gemini references + describe in prompt
+
+### Issue 3: No Unique Captions (HIGH)
+**Current**: Manual entry only
+**Fix**: Analyze full image with Gemini, generate unique caption
+
+### Issue 4: Make.com Not Setup (MEDIUM)
+**Current**: Webhook code exists but incomplete
+**Fix**: Complete webhook, test posting, handle errors
+
+### Issue 5: Aspect Ratios (HIGH)
+**Current**: May be wrong
+**Fix**: Verify 21:9 for grid, 1:1 for full images
+
+---
+
+## ✅ DEFINITION OF SUCCESS
+
+When complete, you should be able to:
+
+1. Open app on phone
+2. Click "Hair" category
+3. Upload 3 salon photos (hair station chair photos)
+4. Click "Generate Grid"
+5. See 4x4 grid with 16 different clients getting haircuts in YOUR salon chair
+6. Click 4 cells
+7. See 4 full 4K images (each exact match to grid, but full size)
+8. See 4 unique captions (one for each image, creative salon style)
+9. Select music + hashtags
+10. Click "Post"
+11. Image automatically posts to Instagram/TikTok/Facebook via Make.com
+12. See "Posted" status in app
+
+**Cost**: $0.25 total
+
+---
+
+## 🔗 RELATED FILES
+
+- **IMPLEMENTATION_PLAN.md** - Detailed fix instructions
+- **DEPLOYMENT.md** - Deployment status
+- **HOW_IT_WORKS.md** - User guide
+- **.env.local** - API keys (Gemini, Supabase, Make.com, etc.)
+
+---
+
+## 📞 QUICK REFERENCE
+
+**What breaks grid generation?**
+- Prompt doesn't say "IN your salon"
+- Room images not passed to Gemini
+- Wrong aspect ratio
+
+**What breaks full images?**
+- Not matching grid cell exactly
+- Wrong aspect ratio (should be 1:1)
+- Wrong service context
+
+**What breaks captions?**
+- Not analyzing actual image
+- Using generic templates
+- Not analyzing what service is shown
+
+**What breaks Make.com?**
+- Webhook not configured
+- Payload format wrong
+- Missing authentication
+
+---
+
+## 🎬 NEXT STEPS
+
+1. ✅ Read this brief (you are here)
+2. ⏭️ Review IMPLEMENTATION_PLAN.md
+3. ⏭️ Fix prompt in App.tsx line 522
+4. ⏭️ Fix reference image usage in laozhang.ts
+5. ⏭️ Add caption generation
+6. ⏭️ Setup Make.com webhook
+7. ⏭️ Test full workflow
+
+---
+
+**Status**: Ready for implementation
+**Priority**: CRITICAL - Core feature broken
+**Time Estimate**: 6-8 hours to fix
+
