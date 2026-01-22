@@ -1,5 +1,14 @@
 # Zavira AI Salon Studio - Deployment Guide
 
+## 🚀 Live Deployment
+
+**Status**: ✅ **DEPLOYED & LIVE**
+
+- **Primary URL**: https://zavira-ai-salon-studio.vercel.app
+- **Latest Build**: 2026-01-22 at 21:15 UTC
+- **Build Status**: ✓ Ready (Build time: ~7s)
+- **Bundle Size**: 371.45 kB (gzip: 105.21 kB)
+
 ## ✅ What's Been Done
 
 ### Backend (Supabase)
@@ -12,7 +21,7 @@
 ### Frontend (Updated)
 1. **Supabase Integration** - `src/lib/supabase.ts`
    - Elements CRUD operations
-   - Generations CRUD operations  
+   - Generations CRUD operations
    - Photo upload/download
    - Anonymous user support (works without login)
    - LocalStorage fallback (works offline)
@@ -22,9 +31,37 @@
    - Syncs with localStorage as backup
    - Works on phone + desktop
 
+3. **Photo Upload Fixed** - `src/components/PhotoUploader.tsx` (2026-01-22)
+   - ✅ Photos now upload to Supabase storage
+   - ✅ Photos sent to Google Gemini 3 Pro 4K (gemini-3-pro-image-preview-4k)
+   - ✅ Auto-categorization using AI
+   - ✅ Real-time upload progress
+   - ✅ Error handling and user feedback
+   - ✅ Thumbnail gallery display
+
 ### Deployment Ready
 - `vercel.json` - Vercel deployment config
 - `.env.example` - Environment variables template
+- **Environment Variables on Vercel** (Configured):
+  - ✅ `VITE_LAOZHANG_API_KEY` - Gemini API access
+  - ✅ `VITE_SUPABASE_URL` - Database connection
+  - ✅ `VITE_SUPABASE_ANON_KEY` - Supabase auth
+
+---
+
+## 🎯 Recent Changes (2026-01-22)
+
+### Photo Upload to Gemini Fixed
+**Problem**: Photos were not being sent to Google Gemini API (Lao Zhang)
+**Solution**: Implemented complete upload workflow in `PhotoUploader.tsx`:
+1. Converts selected files to base64
+2. Uploads to Supabase storage
+3. Sends to Gemini 3 Pro (gemini-3-pro-image-preview-4k model)
+4. Auto-categorizes salon equipment
+5. Shows progress and results
+
+**Files Changed**:
+- `src/components/PhotoUploader.tsx` (lines 17-102)
 
 ---
 
@@ -147,3 +184,39 @@ vercel.json              # Vercel config
 - Unlimited storage
 - Persistent forever
 - Fast CDN delivery
+
+---
+
+## 🔧 Deployment Commands
+
+### Deploy to Production
+```bash
+cd "C:\Users\Ghath\OneDrive\Desktop\zavira-ai-salon-studio"
+npm run build
+vercel --prod
+```
+
+### View Deployment Status
+```bash
+vercel ls                                    # List all deployments
+vercel inspect zavira-ai-salon-studio.vercel.app --logs  # View logs
+vercel env ls                                # List environment variables
+```
+
+### Set Production Alias
+```bash
+vercel alias set <deployment-url> zavira-ai-salon-studio.vercel.app
+```
+
+---
+
+## 📊 MCP Configuration
+
+Available MCP servers in `mcp.json`:
+- **Supabase MCP**: Database operations
+- **Chrome DevTools MCP**: Browser debugging
+
+Other available MCPs on system:
+- GitHub MCP (with PAT configured)
+- Square MCP (sandbox environment)
+- ADB MCP (Android debugging)

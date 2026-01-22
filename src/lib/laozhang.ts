@@ -164,35 +164,52 @@ function parseDataUrl(dataUrl: string): { mimeType: string; data: string } | nul
 }
 
 async function fetchImageAsBase64(url: string): Promise<{ mimeType: string; data: string } | null> {
-  try {
-    // Check if URL is from Supabase storage - use proxy to avoid CORS
-    let fetchUrl = url;
-    if (url.includes('supabase.co/storage') || url.includes('supabase.co/co-storage')) {
-      fetchUrl = `https://xsdrypxvvrrvtwcidmas.supabase.co/functions/v1/image-proxy?url=${encodeURIComponent(url)}`;
-    }
-    
-    const response = await fetch(fetchUrl);
-    if (!response.ok) {
-      console.error('Failed to fetch image:', response.status, response.statusText);
+  const tryFetch = async (fetchUrl: string) => {
+    try {
+      const response = await fetch(fetchUrl, {
+        headers: {
+          'Accept': 'image/*',
+        },
+      });
+      if (!response.ok) {
+        console.error(`Fetch failed: ${response.status} ${response.statusText}`);
+        return null;
+      }
+      const blob = await response.blob();
+      const mimeType = blob.type || 'image/jpeg';
+
+      return new Promise<{ mimeType: string; data: string } | null>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64data = reader.result as string;
+          const base64 = base64data.split(',')[1];
+          resolve({ mimeType, data: base64 });
+        };
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error(`Fetch error: ${error}`);
       return null;
     }
-    const blob = await response.blob();
-    const mimeType = blob.type || 'image/jpeg';
-    
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64data = reader.result as string;
-        // base64data is "data:image/jpeg;base64,...."
-        const base64 = base64data.split(',')[1];
-        resolve({ mimeType, data: base64 });
-      };
-      reader.onerror = () => {
-        console.error('FileReader error');
-        resolve(null);
-      };
-      reader.readAsDataURL(blob);
-    });
+  };
+
+  try {
+    let result = await tryFetch(url);
+
+    if (!result && (url.includes('supabase.co/storage') || url.includes('supabase.co/co-storage'))) {
+      console.log('⚠️ Direct fetch failed, trying proxy...');
+      const proxyUrl = `https://xsdrypxvvrrvtwcidmas.supabase.co/functions/v1/image-proxy?url=${encodeURIComponent(url)}`;
+      result = await tryFetch(proxyUrl);
+    }
+
+    if (!result) {
+      console.error('❌ Failed to fetch image:', url);
+      return null;
+    }
+
+    console.log(`✅ Successfully fetched image: ${result.mimeType}`);
+    return result;
   } catch (error) {
     console.error('Error fetching image:', error);
     return null;
