@@ -165,7 +165,13 @@ function parseDataUrl(dataUrl: string): { mimeType: string; data: string } | nul
 
 async function fetchImageAsBase64(url: string): Promise<{ mimeType: string; data: string } | null> {
   try {
-    const response = await fetch(url);
+    // Check if URL is from Supabase storage - use proxy to avoid CORS
+    let fetchUrl = url;
+    if (url.includes('supabase.co/storage') || url.includes('supabase.co/co-storage')) {
+      fetchUrl = `https://xsdrypxvvrrvtwcidmas.supabase.co/functions/v1/image-proxy?url=${encodeURIComponent(url)}`;
+    }
+    
+    const response = await fetch(fetchUrl);
     if (!response.ok) {
       console.error('Failed to fetch image:', response.status, response.statusText);
       return null;
