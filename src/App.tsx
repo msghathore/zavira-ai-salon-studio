@@ -1232,7 +1232,7 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
                       ref={gridImageRef}
                       onClick={handleGridClick}
                       style={{
-                        aspectRatio: '1',
+                        aspectRatio: '21/9',
                         background: '#0d0d0d',
                         borderRadius: '12px',
                         position: 'relative',
@@ -1243,7 +1243,7 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
                       <img
                         src={gridUrl}
                         alt="Grid"
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }}
+                        style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '8px' }}
                       />
                       {/* Grid lines */}
                       {[1, 2, 3].map(i => (
