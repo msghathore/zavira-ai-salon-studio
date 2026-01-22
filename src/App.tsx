@@ -82,6 +82,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [supabaseReady, setSupabaseReady] = useState(false);
   const [selectedPostImage, setSelectedPostImage] = useState<{url: string, letter: string, generationId: string} | null>(null);
+  const [refPhotosToUse, setRefPhotosToUse] = useState<number>(0);
   const gridImageRef = useRef<HTMLDivElement>(null);
   const userIdRef = useRef<string>(getUserId());
   
@@ -438,6 +439,7 @@ export default function App() {
       // Randomly select exactly 10 photos
       const shuffled = categoryPhotos.sort(() => 0.5 - Math.random());
       const selectedPhotos = shuffled.slice(0, 10);
+      setRefPhotosToUse(selectedPhotos.length);
 
       const gridPrompt = `${prompt}. Close-up portrait shots, medium shots, and wide shots. Various camera angles including eye level, high angle, low angle, and overhead. Shot with different lenses including 35mm, 50mm, 85mm, and 100mm macro. Kodak Portra 400, Fuji Pro 400H, and Ilford HP5 film stock. Soft natural lighting, professional beauty photography, magazine editorial quality. ${DEFAULT_NEGATIVE_PROMPTS}`;
 
@@ -994,7 +996,7 @@ export default function App() {
                       Generate for: {selectedElement.name}
                     </div>
                     <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>
-                      {selectedElement.photoUrls.length} reference photos will be used
+                      {refPhotosToUse} reference photos will be used
                     </div>
                   </div>
                   
