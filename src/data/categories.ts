@@ -21,9 +21,9 @@ export const SIMPLE_BASE_PROMPTS: Record<string, string> = {
 };
 
 export const DEFAULT_PROMPTS: Record<string, string> = {
-  'hair': SIMPLE_BASE_PROMPTS['hair'],
-  'nail': SIMPLE_BASE_PROMPTS['nail'],
-  'tattoo': SIMPLE_BASE_PROMPTS['tattoo']
+  'hair': 'Close-up portrait shots, medium shots, wide shots. Various camera angles including eye level, high angle, low angle, overhead. Shot with different lenses including 35mm, 50mm, 85mm, 100mm macro. Kodak Portra 400, Fuji Pro 400H, Ilford HP5 film stock.',
+  'nail': 'Close-up beauty shots, macro nail photography, overhead angles, side profile views. Various lighting setups including ring light, softbox, natural window light. Shot with different lenses including 100mm macro, 85mm, 50mm. Professional beauty photography, high-end salon aesthetic.',
+  'tattoo': 'Close-up tattoo detail shots, medium shots showing placement, artistic angles. Various camera angles including macro, eye level, overhead. Shot with different lenses including 100mm macro, 85mm, 50mm. Kodak Portra 400, Fuji Pro 400H, Ilford HP5 film stock.'
 };
 
 export const DEFAULT_NEGATIVE_PROMPTS = 'no watermark, no text, no logo, blur, low quality, ugly, deformed, extra limbs, distorted hands, cartoon, illustration, anime style, oversaturated, noise, grain, cropped, floating object, wrong proportions, blurry, pixelated, low resolution, poor lighting, harsh shadows, color cast';
