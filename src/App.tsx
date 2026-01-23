@@ -92,6 +92,7 @@ export default function App() {
   const tabs = [
     { id: 'elements', label: 'Elements', icon: '📦' },
     { id: 'generate', label: 'Generate', icon: '✨' },
+    { id: 'saved', label: 'Saved', icon: '💾', badge: generations.length },
     { id: 'post', label: 'Post', icon: '🚀' },
     { id: 'review', label: 'Review', icon: '✅' },
   ];
@@ -961,6 +962,20 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
             >
               <span style={{ marginRight: '6px' }}>{tab.icon}</span>
               {tab.label}
+              {tab.badge !== undefined && tab.badge > 0 && (
+                <span style={{
+                  marginLeft: '8px',
+                  display: 'inline-block',
+                  background: activeTab === tab.id ? 'rgba(255,255,255,0.3)' : 'rgba(16,185,129,0.3)',
+                  color: activeTab === tab.id ? '#fff' : '#10b981',
+                  fontSize: '11px',
+                  padding: '2px 8px',
+                  borderRadius: '12px',
+                  fontWeight: 700,
+                }}>
+                  {tab.badge}
+                </span>
+              )}
             </button>
           ))}
         </nav>
@@ -1367,88 +1382,61 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
             {gridUrl && (
               <div style={{ marginBottom: '32px' }}>
                 <h3 style={{ fontSize: '18px', marginBottom: '16px' }}>
-                  Select Cells ({selectedCellCount} selected)
+                  🎨 Generated Grid Image
                 </h3>
-                
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: '20px' }}>
-                  {/* Grid */}
+
+                <div style={{
+                  background: 'rgba(255,255,255,0.02)',
+                  borderRadius: '16px',
+                  padding: '16px',
+                  border: '1px solid rgba(255,255,255,0.05)',
+                  marginBottom: '24px',
+                }}>
+                  <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '12px' }}>
+                    💡 View your grid image. You can download it, crop it, or use it as-is. When ready, go to the Post section to create final images.
+                  </p>
                   <div style={{
-                    background: 'rgba(255,255,255,0.02)',
-                    borderRadius: '16px',
-                    padding: '16px',
-                    border: '1px solid rgba(255,255,255,0.05)',
+                    background: '#0d0d0d',
+                    borderRadius: '12px',
+                    padding: '12px',
+                    maxHeight: '500px',
+                    overflow: 'auto',
                   }}>
-                    <div
-                      ref={gridImageRef}
-                      onClick={handleGridClick}
+                    <img
+                      src={gridUrl}
+                      alt="Generated Grid"
+                      style={{ width: '100%', height: 'auto', borderRadius: '8px' }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+                    <a
+                      href={gridUrl}
+                      download={`grid-${Date.now()}.png`}
                       style={{
-                        aspectRatio: '21/9',
-                        background: '#0d0d0d',
-                        borderRadius: '12px',
-                        position: 'relative',
-                        overflow: 'hidden',
-                        cursor: 'crosshair',
+                        flex: 1,
+                        padding: '12px',
+                        background: 'rgba(16,185,129,0.2)',
+                        border: '1px solid rgba(16,185,129,0.5)',
+                        borderRadius: '8px',
+                        color: '#10b981',
+                        textDecoration: 'none',
+                        textAlign: 'center',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
                       }}
                     >
-                      <img
-                        src={gridUrl}
-                        alt="Grid"
-                        style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '8px' }}
-                      />
-                      {/* Grid lines */}
-                      {[1, 2, 3].map(i => (
-                        <React.Fragment key={i}>
-                          <div style={{
-                            position: 'absolute',
-                            left: `${i * 25}%`,
-                            top: 0,
-                            bottom: 0,
-                            width: '2px',
-                            background: 'rgba(255,255,255,0.4)',
-                            zIndex: 5,
-                          }} />
-                          <div style={{
-                            position: 'absolute',
-                            top: `${i * 25}%`,
-                            left: 0,
-                            right: 0,
-                            height: '2px',
-                            background: 'rgba(255,255,255,0.4)',
-                            zIndex: 5,
-                          }} />
-                        </React.Fragment>
-                      ))}
-                      {/* Cell labels */}
-                      {gridCells.map((cell, i) => {
-                        const col = i % 4;
-                        const row = Math.floor(i / 4);
-                        return (
-                          <div key={cell.letter} style={{
-                            position: 'absolute',
-                            left: `${col * 25 + 2}%`,
-                            top: `${row * 25 + 2}%`,
-                            width: '21%',
-                            height: '21%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '14px',
-                            fontWeight: 800,
-                            color: cell.isSelected ? '#000' : 'rgba(255,255,255,0.9)',
-                            background: cell.isSelected ? '#10b981' : 'rgba(0,0,0,0.6)',
-                            borderRadius: '4px',
-                            zIndex: 10,
-                            cursor: 'pointer',
-                            border: cell.isSelected ? '2px solid #fff' : 'none',
-                          }}>
-                            {cell.letter}
-                          </div>
-                        );
-                      })}
-                    </div>
+                      ⬇️ Download Image
+                    </a>
                   </div>
+                </div>
 
-                  {/* Selected Cells Only */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 280px',
+                  gap: '20px'
+                }}>
+                  {/* Cell Generation Panel */}
                   <div>
                     {/* Selected Cell Prompts */}
                     {selectedCellCount > 0 && (
@@ -1536,6 +1524,109 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
             selectedPostImage={selectedPostImage}
             setSelectedPostImage={setSelectedPostImage}
           />
+        )}
+
+        {/* === SAVED IMAGES TAB === */}
+        {activeTab === 'saved' && (
+          <div>
+            <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '24px' }}>
+              💾 Saved Grid Images ({generations.length})
+            </h2>
+            {generations.length === 0 ? (
+              <div style={{
+                background: 'rgba(255,255,255,0.02)',
+                borderRadius: '16px',
+                padding: '48px 24px',
+                textAlign: 'center',
+                border: '1px solid rgba(255,255,255,0.05)',
+              }}>
+                <div style={{ fontSize: '48px', marginBottom: '16px' }}>📸</div>
+                <div style={{ fontSize: '16px', color: 'rgba(255,255,255,0.7)' }}>
+                  No saved grids yet. Generate one in the Generate tab!
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+                {generations.map((gen, idx) => (
+                  <div key={gen.id} style={{
+                    background: 'rgba(255,255,255,0.02)',
+                    borderRadius: '16px',
+                    border: '1px solid rgba(255,255,255,0.05)',
+                    overflow: 'hidden',
+                  }}>
+                    <div style={{
+                      background: '#0d0d0d',
+                      padding: '12px',
+                      maxHeight: '200px',
+                      overflow: 'auto',
+                    }}>
+                      <img
+                        src={gen.gridUrl}
+                        alt={`Grid ${idx + 1}`}
+                        style={{ width: '100%', height: 'auto', borderRadius: '8px' }}
+                      />
+                    </div>
+                    <div style={{ padding: '16px' }}>
+                      <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>
+                        {gen.categoryName} - {gen.elementName}
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '12px' }}>
+                        {new Date(gen.createdAt).toLocaleDateString()} at {new Date(gen.createdAt).toLocaleTimeString()}
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', marginBottom: '12px' }}>
+                        Generated cells: {gen.cells.filter(c => c.resultUrl).length}/16
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <a
+                          href={gen.gridUrl}
+                          download={`grid-${gen.id}.png`}
+                          style={{
+                            flex: 1,
+                            padding: '10px',
+                            background: 'rgba(16,185,129,0.2)',
+                            border: '1px solid rgba(16,185,129,0.5)',
+                            borderRadius: '6px',
+                            color: '#10b981',
+                            textDecoration: 'none',
+                            textAlign: 'center',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          ⬇️ Download
+                        </a>
+                        <button
+                          onClick={() => {
+                            setActiveTab('post');
+                            setSelectedPostImage({
+                              url: gen.gridUrl,
+                              letter: 'grid',
+                              generationId: gen.id
+                            });
+                          }}
+                          style={{
+                            flex: 1,
+                            padding: '10px',
+                            background: 'rgba(59,130,246,0.2)',
+                            border: '1px solid rgba(59,130,246,0.5)',
+                            borderRadius: '6px',
+                            color: '#3b82f6',
+                            textAlign: 'center',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          📤 Post
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
 
         {/* === REVIEW TAB === */}
