@@ -86,49 +86,72 @@ Return ONLY a JSON object with exactly this format:
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
     console.log('[API] Calling Gemini API...');
+    console.log('[API] Gemini URL:', geminiUrl.substring(0, 80) + '...');
+    console.log('[API] Image base64 length:', imageBase64.length);
+    console.log('[API] Mime type:', mimeType);
+
+    const requestBody = {
+      contents: [{
+        parts: [
+          {
+            inline_data: {
+              mime_type: mimeType,
+              data: imageBase64
+            }
+          },
+          {
+            text: prompt
+          }
+        ]
+      }],
+      generationConfig: {
+        temperature: 0.7,
+        max_output_tokens: 256,
+      }
+    };
+
+    console.log('[API] Request body size:', JSON.stringify(requestBody).length, 'bytes');
 
     const response = await fetch(geminiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        contents: [{
-          parts: [
-            {
-              inline_data: {
-                mime_type: mimeType,
-                data: imageBase64
-              }
-            },
-            {
-              text: prompt
-            }
-          ]
-        }],
-        generationConfig: {
-          temperature: 0.7,
-          max_output_tokens: 256,
-        }
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     console.log('[API] Gemini response status:', response.status);
+    console.log('[API] Gemini response headers:', JSON.stringify(Object.fromEntries(response.headers)));
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[API] Gemini API error:', response.status, errorText);
+      console.error('[API] Gemini API error status:', response.status);
+      console.error('[API] Gemini API error response:', errorText);
+      try {
+        const errorJson = JSON.parse(errorText);
+        console.error('[API] Parsed error:', JSON.stringify(errorJson, null, 2));
+      } catch (e) {
+        console.error('[API] Error text (raw):', errorText);
+      }
       throw new Error(`Gemini API failed: ${response.status} - ${errorText}`);
     }
 
     const result = await response.json();
-    console.log('[API] Gemini result:', JSON.stringify(result).substring(0, 200));
+    console.log('[API] Gemini result (full):', JSON.stringify(result, null, 2));
+    console.log('[API] Gemini result summary:', JSON.stringify(result).substring(0, 200));
+
+    const candidates = result.candidates;
+    console.log('[API] Candidates count:', candidates?.length || 0);
+    if (candidates?.length > 0) {
+      console.log('[API] First candidate:', JSON.stringify(candidates[0], null, 2));
+    }
 
     const content = result.candidates?.[0]?.content?.parts?.[0]?.text;
-    console.log('[API] Extracted content:', content?.substring(0, 150));
+    console.log('[API] Extracted content:', content?.substring(0, 200));
 
     if (!content) {
-      console.warn('[API] Empty response from Gemini');
+      console.warn('[API] Empty response from Gemini - missing text content');
+      console.warn('[API] Full result structure:', JSON.stringify(result, null, 2));
       throw new Error('Empty response from AI');
     }
 
@@ -150,7 +173,12 @@ Return ONLY a JSON object with exactly this format:
 
   } catch (error) {
     console.error('[API] Caption generation error:', error.message);
-    console.error('[API] Full error:', error);
+    console.error('[API] Error type:', error.constructor.name);
+    console.error('[API] Full error:', JSON.stringify({
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    }, null, 2));
 
     // Return fallback captions if API fails
     const fallbacks = {
