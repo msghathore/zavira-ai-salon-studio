@@ -38,6 +38,8 @@ export default async function handler(req, res) {
         mimeType = match[1];
         imageBase64 = match[2];
         console.log('[API] Extracted base64 from data URL, mime type:', mimeType);
+      } else {
+        throw new Error('Invalid data URL format - could not extract base64');
       }
     } else {
       // HTTP URL - fetch and convert
@@ -56,6 +58,11 @@ export default async function handler(req, res) {
         console.error('[API] Image fetch failed:', e.message);
         throw new Error('Could not fetch image: ' + e.message);
       }
+    }
+
+    // Validate base64 data exists
+    if (!imageBase64) {
+      throw new Error('Failed to extract image data');
     }
 
     // Call Google Gemini API with vision capability
