@@ -1,5 +1,3 @@
-import Groq from 'groq-sdk';
-
 // Quota exhaustion flag - once quota is hit, stop trying to call API
 let quotaExhausted = false;
 let quotaExhaustedTimestamp = 0;
@@ -49,11 +47,6 @@ export async function generateCaption(
   }
 
   try {
-    const client = new Groq({
-      apiKey: groqApiKey,
-      dangerouslyAllowBrowser: true,
-    });
-
     // Service type descriptions for better captions
     const serviceDescriptions: Record<string, string> = {
       hair: 'hair styling, haircut, color, highlights, or treatment',
@@ -84,18 +77,32 @@ Examples for tattoo:
 
 Generate ONE unique caption text ONLY, nothing else.`;
 
-    const response = await client.chat.completions.create({
-      model: 'mixtral-8x7b-32768',
-      max_tokens: 150,
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
+    // Use direct fetch to Groq API to avoid SDK issues in browser
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${groqApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'mixtral-8x7b-32768',
+        max_tokens: 150,
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+      }),
     });
 
-    const caption = (response.choices[0]?.message?.content || '').trim();
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`Groq API error: ${response.status} - ${JSON.stringify(errorData)}`);
+    }
+
+    const data = await response.json();
+    const caption = (data.choices?.[0]?.message?.content || '').trim();
     return caption || `Beautiful ${serviceType} service at Zavira Salon ✨`;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -112,7 +119,7 @@ Generate ONE unique caption text ONLY, nothing else.`;
       quotaExhaustedTimestamp = Date.now();
       console.warn('⚠️ Groq API quota exhausted. Switching to fallback captions for next 24 hours.');
     } else {
-      console.error('Error generating caption:', error);
+      console.error('Error generating caption:', errorMessage);
     }
 
     // Return generic fallback if generation fails
