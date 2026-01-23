@@ -26,8 +26,11 @@ export default async function handler(req, res) {
 
     if (!apiKey) {
       console.error('[API] No Gemini API key configured');
+      console.error('[API] Available env vars:', Object.keys(process.env).filter(k => k.includes('GEMINI') || k.includes('API')));
       throw new Error('Gemini API key not configured in environment variables');
     }
+
+    console.log('[API] API key found, length:', apiKey.length, 'first 10:', apiKey.substring(0, 10), 'last 10:', apiKey.substring(apiKey.length - 10));
 
     console.log('[API] Starting caption generation for service:', serviceType);
     console.log('[API] Image URL type:', imageUrl.startsWith('data:') ? 'data-url' : 'http-url');
