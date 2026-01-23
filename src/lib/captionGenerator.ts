@@ -77,28 +77,43 @@ Examples for tattoo:
 
 Generate ONE unique caption text ONLY, nothing else.`;
 
+    // Validate API key format
+    const cleanApiKey = groqApiKey.trim();
+    if (cleanApiKey.length < 10) {
+      throw new Error('Invalid API key format');
+    }
+
     // Use direct fetch to Groq API to avoid SDK issues in browser
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${groqApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'mixtral-8x7b-32768',
-        max_tokens: 150,
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-      }),
-    });
+    const apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
+    const requestBody = {
+      model: 'llama-3.3-70b-versatile',
+      max_tokens: 150,
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+    };
+
+    let response;
+    try {
+      response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${cleanApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+    } catch (fetchError) {
+      console.error('Fetch failed:', fetchError);
+      throw new Error(`Network request failed: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`);
+    }
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(`Groq API error: ${response.status} - ${JSON.stringify(errorData)}`);
+      const errorText = await response.text().catch(() => 'Unable to read error response');
+      throw new Error(`Groq API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
