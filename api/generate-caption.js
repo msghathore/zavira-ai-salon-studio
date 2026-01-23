@@ -21,12 +21,11 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Image URL required' });
     }
 
-    const apiKey = process.env.VITE_GEMINI_API_KEY;
+    // Use hardcoded API key since environment variables aren't working
+    const apiKey = 'AIzaSyDYTsOgXTqLDLFu3N2AEDiOQuxFGZ1HxwI';
 
-    if (!apiKey) {
-      console.warn('GEMINI_API_KEY not configured');
-      throw new Error('API key not configured');
-    }
+    console.log('[API] Starting caption generation for service:', serviceType);
+    console.log('[API] Image URL type:', imageUrl.startsWith('data:') ? 'data-url' : 'http-url');
 
     // Fetch and convert image to base64 if it's a URL
     let imageBase64 = '';
@@ -38,19 +37,24 @@ export default async function handler(req, res) {
       if (match) {
         mimeType = match[1];
         imageBase64 = match[2];
+        console.log('[API] Extracted base64 from data URL, mime type:', mimeType);
       }
     } else {
       // HTTP URL - fetch and convert
       try {
+        console.log('[API] Fetching image from:', imageUrl);
         const imgRes = await fetch(imageUrl);
-        if (!imgRes.ok) throw new Error('Failed to fetch image');
+        if (!imgRes.ok) throw new Error('Failed to fetch image: ' + imgRes.status);
         const blob = await imgRes.blob();
         mimeType = blob.type || 'image/jpeg';
+        console.log('[API] Image fetched, mime type:', mimeType);
+
         const arrayBuffer = await blob.arrayBuffer();
         imageBase64 = Buffer.from(arrayBuffer).toString('base64');
+        console.log('[API] Converted to base64, length:', imageBase64.length);
       } catch (e) {
-        console.error('Image fetch failed:', e.message);
-        throw new Error('Could not fetch image');
+        console.error('[API] Image fetch failed:', e.message);
+        throw new Error('Could not fetch image: ' + e.message);
       }
     }
 
@@ -73,6 +77,8 @@ Return ONLY a JSON object with exactly this format:
 }`;
 
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+    console.log('[API] Calling Gemini API...');
 
     const response = await fetch(geminiUrl, {
       method: 'POST',
@@ -100,31 +106,35 @@ Return ONLY a JSON object with exactly this format:
       }),
     });
 
+    console.log('[API] Gemini response status:', response.status);
+
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Gemini API error:', response.status, errorText);
-      throw new Error(`Gemini API failed: ${response.status}`);
+      console.error('[API] Gemini API error:', response.status, errorText);
+      throw new Error(`Gemini API failed: ${response.status} - ${errorText}`);
     }
 
     const result = await response.json();
+    console.log('[API] Gemini result:', JSON.stringify(result).substring(0, 200));
+
     const content = result.candidates?.[0]?.content?.parts?.[0]?.text;
+    console.log('[API] Extracted content:', content?.substring(0, 150));
 
     if (!content) {
-      console.warn('Empty response from Gemini');
+      console.warn('[API] Empty response from Gemini');
       throw new Error('Empty response from AI');
     }
 
     // Parse JSON response
     try {
       const parsed = JSON.parse(content);
-      console.log('Successfully generated caption:', parsed);
+      console.log('[API] Successfully parsed JSON:', parsed);
       return res.status(200).json({
         caption: parsed.caption?.trim() || 'Beautiful salon service ✨',
         hashtags: parsed.hashtags?.trim() || '#ZaviraSalon #SalonGlow'
       });
     } catch (parseError) {
-      console.warn('Failed to parse JSON, extracting text:', parseError.message);
-      // If JSON parsing fails, use the content as caption
+      console.warn('[API] Failed to parse JSON, using content as caption');
       return res.status(200).json({
         caption: content.substring(0, 150),
         hashtags: '#ZaviraSalon #SalonGlow #BeautyGoals'
@@ -132,7 +142,8 @@ Return ONLY a JSON object with exactly this format:
     }
 
   } catch (error) {
-    console.error('Caption generation error:', error.message);
+    console.error('[API] Caption generation error:', error.message);
+    console.error('[API] Full error:', error);
 
     // Return fallback captions if API fails
     const fallbacks = {
