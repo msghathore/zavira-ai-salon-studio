@@ -34,19 +34,28 @@ export default async function handler(req, res) {
     const data = await response.json();
 
     // Parse and cache the tracks
-    cachedTracks = (data.data || []).map((track) => ({
-      id: track.id || '',
-      title: track.title || 'Unknown',
-      artist: track.user?.name || 'Unknown Artist',
-      artwork: {
-        '150x150': track.artwork?.['150x150'] || '',
-        '480x480': track.artwork?.['480x480'] || track.artwork?.['150x150'] || '',
-        '1000x1000': track.artwork?.['1000x1000'] || track.artwork?.['480x480'] || track.artwork?.['150x150'] || '',
-      },
-      stream_url: track.stream_url || '',
-      duration: track.duration || 0,
-      genre: track.genre || 'Unknown',
-    })).slice(0, 20); // Limit to 20 tracks
+    cachedTracks = (data.data || []).map((track) => {
+      // Construct stream URL if not provided by Audius
+      let streamUrl = track.stream_url;
+      if (!streamUrl && track.id) {
+        // Use the Audius discovery provider stream endpoint
+        streamUrl = `https://discoveryprovider.audius.co/v1/tracks/${track.id}/stream`;
+      }
+
+      return {
+        id: track.id || '',
+        title: track.title || 'Unknown',
+        artist: track.user?.name || 'Unknown Artist',
+        artwork: {
+          '150x150': track.artwork?.['150x150'] || '',
+          '480x480': track.artwork?.['480x480'] || track.artwork?.['150x150'] || '',
+          '1000x1000': track.artwork?.['1000x1000'] || track.artwork?.['480x480'] || track.artwork?.['150x150'] || '',
+        },
+        stream_url: streamUrl,
+        duration: track.duration || 0,
+        genre: track.genre || 'Unknown',
+      };
+    }).slice(0, 20); // Limit to 20 tracks
 
     cacheTimestamp = Date.now();
 

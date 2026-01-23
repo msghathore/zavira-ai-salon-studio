@@ -63,9 +63,11 @@ export default function ReviewPanel() {
       }
 
       if (trendingTrack.stream_url) {
+        console.log('[ReviewPanel] Playing track:', trendingTrack.title, 'URL:', trendingTrack.stream_url);
         const newAudio = new Audio(trendingTrack.stream_url);
-        newAudio.play().catch(() => {
-          // Playback failed - continue silently
+        newAudio.crossOrigin = 'anonymous';
+        newAudio.play().catch((error) => {
+          console.error('[ReviewPanel] Playback failed:', error.message);
         });
         setAudio(newAudio);
         setPlayingTrackId(trendingTrack.id);
@@ -73,6 +75,8 @@ export default function ReviewPanel() {
         newAudio.addEventListener('ended', () => {
           setPlayingTrackId(null);
         });
+      } else {
+        console.warn('[ReviewPanel] No stream URL for track:', trendingTrack?.title);
       }
     }
   };

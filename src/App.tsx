@@ -2192,9 +2192,11 @@ function PostSection({
       }
 
       if (trendingTrack.stream_url) {
+        console.log('[App] Playing track:', trendingTrack.title, 'URL:', trendingTrack.stream_url);
         const newAudio = new Audio(trendingTrack.stream_url);
-        newAudio.play().catch(() => {
-          // Playback failed - continue silently
+        newAudio.crossOrigin = 'anonymous';
+        newAudio.play().catch((error) => {
+          console.error('[App] Playback failed:', error.message);
         });
         setAudio(newAudio);
         setPlayingTrackId(trendingTrack.id);
@@ -2202,6 +2204,8 @@ function PostSection({
         newAudio.addEventListener('ended', () => {
           setPlayingTrackId(null);
         });
+      } else {
+        console.warn('[App] No stream URL for track:', trendingTrack?.title);
       }
     }
   };

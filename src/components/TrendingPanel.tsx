@@ -55,16 +55,20 @@ export default function TrendingPanel() {
       }
       
       if (track.stream_url) {
+        console.log('[TrendingPanel] Playing track:', track.title, 'URL:', track.stream_url);
         const newAudio = new Audio(track.stream_url);
-        newAudio.play().catch(() => {
-          // Playback failed - continue silently
+        newAudio.crossOrigin = 'anonymous';
+        newAudio.play().catch((error) => {
+          console.error('[TrendingPanel] Playback failed:', error.message);
         });
         setAudio(newAudio);
         setPlayingTrackId(track.id);
-        
+
         newAudio.addEventListener('ended', () => {
           setPlayingTrackId(null);
         });
+      } else {
+        console.warn('[TrendingPanel] No stream URL for track:', track.title);
       }
     }
   };
