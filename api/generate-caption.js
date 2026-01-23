@@ -21,8 +21,13 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Image URL required' });
     }
 
-    // Use hardcoded API key since environment variables aren't working
-    const apiKey = 'AIzaSyDYTsOgXTqLDLFu3N2AEDiOQuxFGZ1HxwI';
+    // Get API key from environment variable
+    const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+      console.error('[API] No Gemini API key configured');
+      throw new Error('Gemini API key not configured in environment variables');
+    }
 
     console.log('[API] Starting caption generation for service:', serviceType);
     console.log('[API] Image URL type:', imageUrl.startsWith('data:') ? 'data-url' : 'http-url');
@@ -83,7 +88,7 @@ Return ONLY a JSON object with exactly this format:
   "hashtags": "#tag1 #tag2 #tag3 #tag4 #tag5"
 }`;
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
     console.log('[API] Calling Gemini API...');
     console.log('[API] Gemini URL:', geminiUrl.substring(0, 80) + '...');
