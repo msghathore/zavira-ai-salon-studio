@@ -2066,17 +2066,26 @@ function PostSection({
   // Auto-generate caption when image is selected
   useEffect(() => {
     const autoGenerateCaption = async () => {
-      if (!selectedPostImage || !GOOGLE_API_KEY) return;
+      if (!selectedPostImage) {
+        return;
+      }
+
+      if (!GOOGLE_API_KEY) {
+        setCaption('⚠️ Google API key not configured');
+        return;
+      }
 
       // Find the generation that contains this image (for grid images)
       const generation = generations.find(g => g.id === selectedPostImage.generationId);
       const isUploadedImage = selectedPostImage.generationId === 'uploaded';
 
       // If it's neither a grid image nor uploaded, skip
-      if (!generation && !isUploadedImage) return;
+      if (!generation && !isUploadedImage) {
+        return;
+      }
 
       try {
-        setCaption('Generating caption...'); // Show loading state
+        setCaption('✨ Generating caption...'); // Show loading state
 
         // Determine service type from generation or default to 'glow' for uploaded
         const serviceType = generation
