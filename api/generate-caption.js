@@ -160,16 +160,41 @@ Return ONLY a JSON object with exactly this format:
       throw new Error('Empty response from AI');
     }
 
-    // Parse JSON response
+    // Parse JSON response - handle markdown code blocks
+    let jsonContent = content;
+
+    // Try to extract JSON from markdown code blocks (```json ... ```)
+    const jsonMatch = content.match(/```(?:json)?\n?([\s\S]*?)\n?```/);
+    if (jsonMatch) {
+      console.log('[API] Extracted JSON from markdown code blocks');
+      jsonContent = jsonMatch[1];
+    }
+
     try {
-      const parsed = JSON.parse(content);
+      const parsed = JSON.parse(jsonContent);
       console.log('[API] Successfully parsed JSON:', parsed);
       return res.status(200).json({
         caption: parsed.caption?.trim() || 'Beautiful salon service ✨',
         hashtags: parsed.hashtags?.trim() || '#ZaviraSalon #SalonGlow'
       });
     } catch (parseError) {
-      console.warn('[API] Failed to parse JSON, using content as caption');
+      console.warn('[API] Failed to parse JSON:', parseError.message);
+      console.warn('[API] Attempted to parse:', jsonContent.substring(0, 200));
+
+      // Try to extract caption and hashtags from raw content
+      const captionMatch = content.match(/"caption":\s*"([^"]+)"/);
+      const hashtagsMatch = content.match(/"hashtags":\s*"([^"]+)"/);
+
+      if (captionMatch && hashtagsMatch) {
+        console.log('[API] Extracted caption and hashtags from raw content');
+        return res.status(200).json({
+          caption: captionMatch[1],
+          hashtags: hashtagsMatch[1]
+        });
+      }
+
+      // Last resort: use content as caption
+      console.warn('[API] Could not parse JSON, using content as caption');
       return res.status(200).json({
         caption: content.substring(0, 150),
         hashtags: '#ZaviraSalon #SalonGlow #BeautyGoals'
