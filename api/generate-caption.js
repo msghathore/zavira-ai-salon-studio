@@ -21,48 +21,152 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Image URL required' });
     }
 
-    // Free quality captions for each service type
-    // These are context-aware and high-quality defaults
-    const captions = {
-      hair: {
-        caption: 'Transformative new look ✨ Every strand is perfection',
-        hashtags: '#HairTransformation #SalonGlow #HairGoals #ZaviraSalon #LuxuryHair'
-      },
-      nail: {
-        caption: 'Nail artistry at its finest 💅✨ Custom designs that speak',
-        hashtags: '#NailArt #NailDesign #LuxuryNails #SalonGlow #ZaviraSalon'
-      },
-      tattoo: {
-        caption: 'Timeless ink design 🖤 Art that tells your story',
-        hashtags: '#TattooArt #CustomInk #TattooDesign #Artistry #ZaviraSalon'
-      },
-      massage: {
-        caption: 'Pure relaxation activated 🧘✨ Wellness goals achieved',
-        hashtags: '#MassageTherapy #Wellness #RelaxationMode #SpaLife #ZaviraSalon'
-      },
-      facial: {
-        caption: 'Glowing skin ✨ Skincare transformation goals',
-        hashtags: '#FacialTreatment #Skincare #SkinGlow #BeautyGoals #ZaviraSalon'
-      },
-      glow: {
-        caption: 'That salon glow ✨ Radiant confidence unlocked',
-        hashtags: '#SalonGlow #BeautyGlow #Confidence #SalonLife #ZaviraSalon'
+    const apiKey = process.env.VITE_GEMINI_API_KEY;
+
+    if (!apiKey) {
+      console.warn('GEMINI_API_KEY not configured');
+      throw new Error('API key not configured');
+    }
+
+    // Fetch and convert image to base64 if it's a URL
+    let imageBase64 = '';
+    let mimeType = 'image/jpeg';
+
+    if (imageUrl.startsWith('data:')) {
+      // Data URL - extract base64 directly
+      const match = imageUrl.match(/^data:([^;]+);base64,(.+)$/);
+      if (match) {
+        mimeType = match[1];
+        imageBase64 = match[2];
       }
-    };
+    } else {
+      // HTTP URL - fetch and convert
+      try {
+        const imgRes = await fetch(imageUrl);
+        if (!imgRes.ok) throw new Error('Failed to fetch image');
+        const blob = await imgRes.blob();
+        mimeType = blob.type || 'image/jpeg';
+        const arrayBuffer = await blob.arrayBuffer();
+        imageBase64 = Buffer.from(arrayBuffer).toString('base64');
+      } catch (e) {
+        console.error('Image fetch failed:', e.message);
+        throw new Error('Could not fetch image');
+      }
+    }
 
-    const result = captions[serviceType] || {
-      caption: 'Beautiful salon service ✨ Pure luxury',
-      hashtags: '#ZaviraSalon #SalonLife #BeautyGoals'
-    };
+    // Call Google Gemini API with vision capability
+    const prompt = `You are a luxury salon social media expert. Analyze this ${serviceType} service image carefully.
 
-    return res.status(200).json(result);
+Create:
+1. A SHORT, captivating Instagram caption (1-2 sentences max) that describes what you see
+2. A list of 5-8 trending salon hashtags
+
+Be specific about:
+- Colors, techniques, and styles visible in the image
+- The transformation and glow effect
+- Service quality and luxury feel
+
+Return ONLY a JSON object with exactly this format:
+{
+  "caption": "Your caption here (1-2 sentences describing the image)",
+  "hashtags": "#tag1 #tag2 #tag3 #tag4 #tag5"
+}`;
+
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+    const response = await fetch(geminiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            {
+              inline_data: {
+                mime_type: mimeType,
+                data: imageBase64
+              }
+            },
+            {
+              text: prompt
+            }
+          ]
+        }],
+        generationConfig: {
+          temperature: 0.7,
+          max_output_tokens: 256,
+        }
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Gemini API error:', response.status, errorText);
+      throw new Error(`Gemini API failed: ${response.status}`);
+    }
+
+    const result = await response.json();
+    const content = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!content) {
+      console.warn('Empty response from Gemini');
+      throw new Error('Empty response from AI');
+    }
+
+    // Parse JSON response
+    try {
+      const parsed = JSON.parse(content);
+      console.log('Successfully generated caption:', parsed);
+      return res.status(200).json({
+        caption: parsed.caption?.trim() || 'Beautiful salon service ✨',
+        hashtags: parsed.hashtags?.trim() || '#ZaviraSalon #SalonGlow'
+      });
+    } catch (parseError) {
+      console.warn('Failed to parse JSON, extracting text:', parseError.message);
+      // If JSON parsing fails, use the content as caption
+      return res.status(200).json({
+        caption: content.substring(0, 150),
+        hashtags: '#ZaviraSalon #SalonGlow #BeautyGoals'
+      });
+    }
 
   } catch (error) {
     console.error('Caption generation error:', error.message);
-    return res.status(500).json({
-      error: error.message,
+
+    // Return fallback captions if API fails
+    const fallbacks = {
+      hair: {
+        caption: 'Stunning transformation ✨ Your new look is gorgeous',
+        hashtags: '#HairGoals #SalonTransformation #ZaviraSalon'
+      },
+      nail: {
+        caption: 'Nail perfection 💅✨ Custom artistry at its best',
+        hashtags: '#NailArt #NailDesign #ZaviraSalon'
+      },
+      tattoo: {
+        caption: 'Timeless ink design 🖤 Art that speaks volumes',
+        hashtags: '#TattooArt #CustomInk #ZaviraSalon'
+      },
+      massage: {
+        caption: 'Pure relaxation 🧘✨ Wellness therapy unlocked',
+        hashtags: '#MassageTherapy #Wellness #ZaviraSalon'
+      },
+      facial: {
+        caption: 'Glowing skin ✨ Treatment goals achieved',
+        hashtags: '#Skincare #FacialTreatment #ZaviraSalon'
+      },
+      glow: {
+        caption: 'That salon glow ✨ Radiant confidence',
+        hashtags: '#SalonGlow #Beauty #ZaviraSalon'
+      }
+    };
+
+    const fallback = fallbacks[req.body.serviceType] || {
       caption: 'Beautiful salon service ✨',
       hashtags: '#ZaviraSalon #SalonLife'
-    });
+    };
+
+    return res.status(200).json(fallback);
   }
 }
