@@ -2,10 +2,10 @@ import React, { useState, useRef, MouseEvent, useCallback, useEffect, SetStateAc
 import { generateImage, createLaoZhangClient, ImageGenerationOptions, buildEditPrompt } from './lib/laozhang';
 import { CATEGORIES, DEFAULT_PROMPTS, DEFAULT_NEGATIVE_PROMPTS, CELL_LABELS, Category, generateCellPromptWithVariations } from './data/categories';
 import BudgetTracker from './components/BudgetTracker';
-import { 
-  supabase, 
-  getUserId, 
-  uploadPhoto as supabaseUploadPhoto, 
+import {
+  supabase,
+  getUserId,
+  uploadPhoto as supabaseUploadPhoto,
   deletePhoto as supabaseDeletePhoto,
   fetchElements as supabaseFetchElements,
   saveElement as supabaseSaveElement,
@@ -15,7 +15,7 @@ import {
   createPostedContent,
   fetchPostedContent as supabaseFetchPostedContent,
   updatePostedStatus,
-  isSupabaseConfigured 
+  isSupabaseConfigured
 } from './lib/supabase';
 import { getTrendingTracks, AudiusTrack } from './lib/audius';
 import { trackImageGeneration } from './components/BudgetTracker';
@@ -82,17 +82,18 @@ export default function App() {
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [supabaseReady, setSupabaseReady] = useState(false);
-  const [selectedPostImage, setSelectedPostImage] = useState<{url: string, letter: string, generationId: string} | null>(null);
+  const [selectedPostImage, setSelectedPostImage] = useState<{ url: string, letter: string, generationId: string } | null>(null);
   const [refPhotosToUse, setRefPhotosToUse] = useState<number>(0);
   const [gridPromptText, setGridPromptText] = useState<string>('');
-  const [uploadedImages, setUploadedImages] = useState<{url: string, name: string}[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<{ url: string, name: string }[]>([]);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const gridImageRef = useRef<HTMLDivElement>(null);
   const userIdRef = useRef<string>(getUserId());
-  
+
   const LAOZHANG_API_KEY = (import.meta.env["VITE_LAOZHANG_API_KEY"] || "");
   const MAKE_WEBHOOK_URL = (import.meta.env["VITE_MAKE_INSTAGRAM_WEBHOOK"] || "");
-  
+  const GEMINI_API_KEY = (import.meta.env["VITE_GEMINI_API_KEY"] || "");
+
   const tabs = [
     { id: 'elements', label: 'Elements', icon: '📦' },
     { id: 'generate', label: 'Generate', icon: '✨' },
@@ -101,7 +102,7 @@ export default function App() {
     { id: 'usage', label: 'Usage', icon: '📊' },
     { id: 'review', label: 'Review', icon: '✅' },
   ];
-  
+
   const currentCategory = CATEGORIES.find(c => c.id === selectedCategory) || CATEGORIES[0];
 
   // Load data from Supabase or localStorage on mount
@@ -110,7 +111,7 @@ export default function App() {
       setIsLoading(true);
       try {
         const userId = userIdRef.current;
-        
+
         // Try Supabase first
         if (isSupabaseConfigured()) {
           const [supabaseElements, supabaseGenerations, supabasePosted] = await Promise.all([
@@ -118,34 +119,34 @@ export default function App() {
             supabaseFetchGenerations(userId),
             supabaseFetchPostedContent(userId),
           ]);
-          
+
           // Upgrade old prompts in Supabase elements (check if starts with old pattern)
           const oldPromptPatterns = [
             'Beautiful woman with stunning hairstyle in modern salon',
             'Elegant nail art design on manicured hands',
             'Artistic tattoo design on skin'
           ];
-          
+
           const upgradedElements = supabaseElements.map((e: any) => {
             if (oldPromptPatterns.some(pattern => e.prompt.startsWith(pattern))) {
               return { ...e, prompt: DEFAULT_PROMPTS[e.category] || e.prompt };
             }
             return e;
           });
-          
+
           if (upgradedElements.length > 0) setElements(upgradedElements);
           if (supabaseGenerations.length > 0) setGenerations(supabaseGenerations);
           if (supabasePosted.length > 0) setPostedContent(supabasePosted);
           setSupabaseReady(true);
         }
-        
+
         // Also load from localStorage as fallback
         const savedElements = localStorage.getItem('zavira_elements');
         if (savedElements) {
           try {
             let parsed = JSON.parse(savedElements);
             const localElements = parsed.map((e: any) => ({ ...e, createdAt: new Date(e.createdAt) }));
-            
+
             // Clean up old elements with numeric IDs or invalid categories
             const validCategories = ['hair', 'nail', 'tattoo'];
             const oldPromptPatterns = [
@@ -160,7 +161,7 @@ export default function App() {
               e.name && e.prompt
             ).map((e: any) => {
               const baseCat = e.category.split('-')[0];
-              
+
               let updatedPrompt = e.prompt;
               if (oldPromptPatterns.some(pattern => e.prompt.startsWith(pattern))) {
                 updatedPrompt = DEFAULT_PROMPTS[baseCat] || e.prompt;
@@ -172,17 +173,17 @@ export default function App() {
                 prompt: updatedPrompt
               };
             });
-            
+
             if (cleanedElements.length !== localElements.length) {
               localStorage.setItem('zavira_elements', JSON.stringify(cleanedElements));
             }
-            
+
             if (!isSupabaseConfigured() || cleanedElements.length > elements.length) {
               setElements(cleanedElements);
             }
-          } catch {}
+          } catch { }
         }
-        
+
         const savedGenerations = localStorage.getItem('zavira_generations');
         if (savedGenerations) {
           try {
@@ -191,9 +192,9 @@ export default function App() {
             if (!isSupabaseConfigured() || localGenerations.length > generations.length) {
               setGenerations(localGenerations);
             }
-          } catch {}
+          } catch { }
         }
-        
+
         const savedPosted = localStorage.getItem('zavira_posted');
         if (savedPosted) {
           try {
@@ -202,14 +203,14 @@ export default function App() {
             if (!isSupabaseConfigured() || localPosted.length > postedContent.length) {
               setPostedContent(localPosted);
             }
-          } catch {}
+          } catch { }
         }
       } catch (err) {
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     loadData();
   }, []);
 
@@ -222,12 +223,12 @@ export default function App() {
         'Elegant nail art design on manicured hands',
         'Artistic tattoo design on skin'
       ];
-      
+
       let upgradedElement = { ...firstElement };
       if (oldPromptPatterns.some(pattern => firstElement.prompt.startsWith(pattern))) {
         upgradedElement.prompt = DEFAULT_PROMPTS[firstElement.category] || firstElement.prompt;
       }
-      
+
       setSelectedElement(upgradedElement);
       setSelectedCategory(upgradedElement.category);
       setRefPhotosToUse(getRefPhotoCount());
@@ -239,7 +240,7 @@ export default function App() {
   const syncElements = async (newElements: Element[]) => {
     setElements(newElements);
     localStorage.setItem('zavira_elements', JSON.stringify(newElements));
-    
+
     if (supabaseReady) {
       try {
         for (const element of newElements) {
@@ -254,7 +255,7 @@ export default function App() {
   const syncGenerations = async (newGenerations: Generation[]) => {
     setGenerations(newGenerations);
     localStorage.setItem('zavira_generations', JSON.stringify(newGenerations));
-    
+
     if (supabaseReady) {
       try {
         for (const gen of newGenerations) {
@@ -410,7 +411,7 @@ export default function App() {
   // Add photo to element
   const handleAddPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!editingElement || !e.target.files?.length) return;
-    
+
     setIsUploading(true);
     try {
       const files = Array.from(e.target.files);
@@ -591,18 +592,18 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
       'Elegant nail art design on manicured hands',
       'Artistic tattoo design on skin'
     ];
-    
+
     let upgradedElement = { ...element };
     if (oldPromptPatterns.some(pattern => element.prompt.startsWith(pattern))) {
       upgradedElement.prompt = DEFAULT_PROMPTS[element.category] || element.prompt;
       // Update in elements array
-      const updatedElements = elements.map(e => 
+      const updatedElements = elements.map(e =>
         e.id === element.id ? upgradedElement : e
       );
       setElements(updatedElements);
       localStorage.setItem('zira_elements', JSON.stringify(updatedElements));
     }
-    
+
     setSelectedElement(upgradedElement);
     setSelectedCategory(upgradedElement.category);
     setGridUrl(null);
@@ -627,7 +628,7 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
 
     setIsGeneratingGrid(true);
     setError(null);
-    
+
     try {
       const client = createLaoZhangClient(LAOZHANG_API_KEY);
 
@@ -635,7 +636,7 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
       const categoryPhotos = elements
         .filter(el => el.category === selectedElement.category)
         .flatMap(el => el.photoUrls);
-      
+
       // Randomly select exactly 10 photos
       const shuffled = categoryPhotos.sort(() => 0.5 - Math.random());
       const selectedPhotos = shuffled.slice(0, 10);
@@ -707,7 +708,7 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
     const cellIndex = row * 4 + col;
 
     if (cellIndex >= 0 && cellIndex < 16) {
-      setGridCells(prev => prev.map((cell, i) => 
+      setGridCells(prev => prev.map((cell, i) =>
         i === cellIndex ? { ...cell, isSelected: !cell.isSelected } : cell
       ));
     }
@@ -1102,8 +1103,8 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
                     background: 'rgba(255,255,255,0.02)',
                     borderRadius: '16px',
                     padding: '20px',
-                    border: selectedElement?.id === element.id 
-                      ? '2px solid #10b981' 
+                    border: selectedElement?.id === element.id
+                      ? '2px solid #10b981'
                       : '1px solid rgba(255,255,255,0.05)',
                     cursor: 'pointer',
                   }} onClick={() => handleSelectElement(element)}>
@@ -1145,7 +1146,7 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
                         </button>
                       </div>
                     </div>
-                    
+
                     {/* Photo Preview */}
                     {element.photoUrls.length > 0 && (
                       <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', padding: '8px 0' }}>
@@ -1177,7 +1178,7 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
                         )}
                       </div>
                     )}
-                    
+
                     <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', marginTop: '8px' }}>
                       {element.prompt.substring(0, 100)}...
                     </div>
@@ -1278,7 +1279,7 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
                       {getRefPhotoCount()} reference photos will be used (10 max)
                     </div>
                   </div>
-                  
+
                   {/* Prompt Editor */}
                   <div style={{
                     background: 'rgba(0,0,0,0.3)',
@@ -1312,7 +1313,7 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
                       💡 This prompt will be used to generate the 4x4 grid
                     </div>
                   </div>
-                  
+
                   <button
                     onClick={handleGenerateGrid}
                     disabled={isGeneratingGrid}
@@ -1356,7 +1357,7 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
                     <div style={{ fontWeight: 600, marginBottom: '4px' }}>Sample URLs:</div>
                     {elements.filter(el => el.category === selectedElement.category).flatMap(el => el.photoUrls).slice(0, 2).map((url, i) => (
                       <div key={i} style={{ fontSize: '10px', wordBreak: 'break-all', color: 'rgba(255,165,0,0.8)', marginBottom: '2px' }}>
-                        {i+1}. {url.substring(0, 80)}...
+                        {i + 1}. {url.substring(0, 80)}...
                       </div>
                     ))}
                   </div>
@@ -1511,6 +1512,7 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
             setSelectedPostImage={setSelectedPostImage}
             uploadedImages={uploadedImages}
             setUploadedImages={setUploadedImages}
+            geminiApiKey={GEMINI_API_KEY}
           />
         )}
 
@@ -2018,16 +2020,17 @@ function PostSection({
   selectedPostImage,
   setSelectedPostImage,
   uploadedImages,
-  setUploadedImages
+  setUploadedImages,
+  geminiApiKey
 }: {
   generations: Generation[];
-  onPost: (image: {url: string, letter: string, generationId: string}, caption: string, hashtags: string[], musicUrl: string, platform: 'tiktok' | 'instagram') => Promise<void>;
-  selectedPostImage: {url: string, letter: string, generationId: string} | null;
-  setSelectedPostImage: (img: {url: string, letter: string, generationId: string} | null) => void;
-  uploadedImages: {url: string, name: string}[];
-  setUploadedImages: Dispatch<SetStateAction<{url: string, name: string}[]>>;
+  onPost: (image: { url: string, letter: string, generationId: string }, caption: string, hashtags: string[], musicUrl: string, platform: 'tiktok' | 'instagram') => Promise<void>;
+  selectedPostImage: { url: string, letter: string, generationId: string } | null;
+  setSelectedPostImage: (img: { url: string, letter: string, generationId: string } | null) => void;
+  uploadedImages: { url: string, name: string }[];
+  setUploadedImages: Dispatch<SetStateAction<{ url: string, name: string }[]>>;
+  geminiApiKey: string;
 }) {
-  const GROQ_API_KEY = import.meta.env['VITE_GROQ_API_KEY'] || '';
   const [caption, setCaption] = useState('');
   const [hashtags, setHashtags] = useState('#ZaviraSalon #Winnipeg #HairSalon');
   const [musicUrl, setMusicUrl] = useState('');
@@ -2038,7 +2041,7 @@ function PostSection({
   const [platform, setPlatform] = useState<'tiktok' | 'instagram'>('tiktok');
   const [isPosting, setIsPosting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [captionCache, setCaptionCache] = useState<Record<string, string>>({});
+  const [captionCache, setCaptionCache] = useState<Record<string, { caption: string, hashtags: string }>>({});
 
   useEffect(() => {
     const fetchTrendingTrack = async () => {
@@ -2067,32 +2070,44 @@ function PostSection({
   // Auto-generate caption when image is selected (cached to avoid duplicate API calls)
   useEffect(() => {
     const autoGenerateCaption = async () => {
+      console.log(`[App] Auto-generate caption effect triggered`);
       if (!selectedPostImage) {
+        console.log(`[App] No selected image, skipping caption generation`);
         return;
       }
 
+      console.log(`[App] Selected image: ${selectedPostImage.url.substring(0, 50)}...`);
+      console.log(`[App] Generation ID: ${selectedPostImage.generationId}`);
+
       // Check if caption is already cached for this image
       if (captionCache[selectedPostImage.url]) {
-        setCaption(captionCache[selectedPostImage.url]);
+        console.log(`[App] Using cached caption for this image`);
+        const cached = captionCache[selectedPostImage.url];
+        setCaption(cached.caption);
+        setHashtags(cached.hashtags);
         return;
       }
 
       // Skip API call if quota is exhausted
       if (isQuotaExhausted()) {
+        console.log(`[App] Quota exhausted, using fallback caption`);
         const categoryName = selectedPostImage.generationId === 'uploaded'
           ? 'Salon'
           : generations.find(g => g.id === selectedPostImage.generationId)?.categoryName || 'Salon';
-        const fallback = `Beautiful ${categoryName} service at Zavira Salon ✨`;
+        const fallbackCaption = `Beautiful ${categoryName} service at Zavira Salon ✨`;
+        const fallbackHashtags = '#ZaviraSalon #Winnipeg #SalonLife';
         setCaptionCache(prev => ({
           ...prev,
-          [selectedPostImage.url]: fallback
+          [selectedPostImage.url]: { caption: fallbackCaption, hashtags: fallbackHashtags }
         }));
-        setCaption(fallback);
+        setCaption(fallbackCaption);
+        setHashtags(fallbackHashtags);
         return;
       }
 
-      if (!GROQ_API_KEY) {
-        setCaption('⚠️ Groq API key not configured');
+      if (!geminiApiKey) {
+        console.log(`[App] No Gemini API key configured`);
+        setCaption('⚠️ Gemini API key not configured');
         return;
       }
 
@@ -2100,12 +2115,17 @@ function PostSection({
       const generation = generations.find(g => g.id === selectedPostImage.generationId);
       const isUploadedImage = selectedPostImage.generationId === 'uploaded';
 
+      console.log(`[App] Is uploaded image: ${isUploadedImage}`);
+      console.log(`[App] Generation found: ${generation ? 'Yes' : 'No'}`);
+
       // If it's neither a grid image nor uploaded, skip
       if (!generation && !isUploadedImage) {
+        console.log(`[App] Neither grid image nor uploaded, skipping`);
         return;
       }
 
       try {
+        console.log(`[App] Starting caption generation...`);
         setCaption('✨ Generating caption...'); // Show loading state
 
         // Determine service type from generation or default to 'glow' for uploaded
@@ -2113,34 +2133,42 @@ function PostSection({
           ? (generation.categoryName.toLowerCase() as 'hair' | 'nail' | 'tattoo' | 'massage' | 'facial' | 'glow')
           : 'glow';
 
-        const aiCaption = await generateCaption(
+        console.log(`[App] Service type: ${serviceType}`);
+
+        const result = await generateCaption(
           selectedPostImage.url,
-          GROQ_API_KEY,
+          geminiApiKey,
           serviceType
         );
 
-        // Cache the caption so we don't call API again for this image
+        console.log(`[App] Generated results:`, result);
+
+        // Cache the results so we don't call API again for this image
         setCaptionCache(prev => ({
           ...prev,
-          [selectedPostImage.url]: aiCaption
+          [selectedPostImage.url]: result
         }));
-        setCaption(aiCaption);
+        setCaption(result.caption);
+        setHashtags(result.hashtags);
       } catch (error) {
+        console.log(`[App] Error generating caption: ${error}`);
         // Fallback caption
         const categoryName = generation?.categoryName || 'Salon';
-        const fallback = `Beautiful ${categoryName} service at Zavira Salon ✨`;
+        const fallbackCaption = `Beautiful ${categoryName} service at Zavira Salon ✨`;
+        const fallbackHashtags = '#ZaviraSalon #Winnipeg #SalonLife';
 
         // Cache fallback too
         setCaptionCache(prev => ({
           ...prev,
-          [selectedPostImage.url]: fallback
+          [selectedPostImage.url]: { caption: fallbackCaption, hashtags: fallbackHashtags }
         }));
-        setCaption(fallback);
+        setCaption(fallbackCaption);
+        setHashtags(fallbackHashtags);
       }
     };
 
     autoGenerateCaption();
-  }, [selectedPostImage, generations, GROQ_API_KEY]);
+  }, [selectedPostImage?.url, geminiApiKey]); // Only depend on image URL and API key
 
   const handlePlayPause = () => {
     if (!trendingTrack) return;
@@ -2179,7 +2207,7 @@ function PostSection({
       const reader = new FileReader();
       reader.onload = (event) => {
         const dataUrl = event.target?.result as string;
-        setUploadedImages((prev: {url: string, name: string}[]) => [...prev, {
+        setUploadedImages((prev: { url: string, name: string }[]) => [...prev, {
           url: dataUrl,
           name: file.name
         }]);
@@ -2310,8 +2338,8 @@ function PostSection({
                     aspectRatio: '1',
                     borderRadius: '12px',
                     overflow: 'hidden',
-                    border: selectedPostImage?.url === img.url 
-                      ? '3px solid #10b981' 
+                    border: selectedPostImage?.url === img.url
+                      ? '3px solid #10b981'
                       : '2px solid transparent',
                     cursor: 'pointer',
                     position: 'relative',
@@ -2348,10 +2376,10 @@ function PostSection({
                 padding: '16px',
                 marginBottom: '16px',
               }}>
-                <img 
-                  src={selectedPostImage.url} 
-                  alt="Selected" 
-                  style={{ width: '100%', borderRadius: '12px', marginBottom: '16px' }} 
+                <img
+                  src={selectedPostImage.url}
+                  alt="Selected"
+                  style={{ width: '100%', borderRadius: '12px', marginBottom: '16px' }}
                 />
 
                 {/* Platform */}
@@ -2631,16 +2659,16 @@ function PostSection({
               overflow: 'hidden',
               marginBottom: '20px',
             }}>
-              <img 
-                src={selectedPostImage.url} 
-                alt="Preview" 
-                style={{ width: '100%', display: 'block' }} 
+              <img
+                src={selectedPostImage.url}
+                alt="Preview"
+                style={{ width: '100%', display: 'block' }}
               />
             </div>
 
             {/* Platform Badge */}
             <div style={{ marginBottom: '12px' }}>
-              <span style={{ 
+              <span style={{
                 background: platform === 'tiktok' ? '#fe2c55' : '#E1306C',
                 padding: '6px 12px',
                 borderRadius: '6px',
@@ -2670,7 +2698,7 @@ function PostSection({
 
             {/* Music Preview */}
             {trendingTrack && (
-              <div style={{ 
+              <div style={{
                 background: 'rgba(16,185,129,0.1)',
                 border: '1px solid rgba(16,185,129,0.3)',
                 borderRadius: '10px',
@@ -2679,14 +2707,36 @@ function PostSection({
               }}>
                 <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '8px' }}>🎵 Music</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <img
-                    src={trendingTrack.artwork['150x150']}
-                    alt={trendingTrack.title}
-                    style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }}
-                  />
-                  <div>
-                    <div style={{ fontSize: '13px', fontWeight: 600 }}>{trendingTrack.title}</div>
-                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>{trendingTrack.artist}</div>
+                  <div style={{ position: 'relative', width: '40px', height: '40px', flexShrink: 0 }}>
+                    <img
+                      src={trendingTrack.artwork['150x150']}
+                      alt={trendingTrack.title}
+                      style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }}
+                    />
+                    <button
+                      onClick={handlePlayPause}
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: playingTrackId === trendingTrack.id ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.4)',
+                        cursor: 'pointer',
+                        border: 'none',
+                        borderRadius: '6px',
+                      }}
+                    >
+                      {playingTrackId === trendingTrack.id ? (
+                        <span style={{ color: '#fff', fontSize: '14px' }}>⏸</span>
+                      ) : (
+                        <span style={{ color: '#fff', fontSize: '14px' }}>▶</span>
+                      )}
+                    </button>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '13px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{trendingTrack.title}</div>
+                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{trendingTrack.artist}</div>
                   </div>
                 </div>
               </div>
@@ -2736,10 +2786,10 @@ function PostSection({
 }
 
 // Review Section - Shows Posted Content Preview
-function ReviewSection({ 
-  generations, 
-  postedContent 
-}: { 
+function ReviewSection({
+  generations,
+  postedContent
+}: {
   generations: Generation[];
   postedContent: PostedContent[];
 }) {
@@ -2790,7 +2840,7 @@ function ReviewSection({
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                    <span style={{ 
+                    <span style={{
                       background: post.platform === 'tiktok' ? '#fe2c55' : '#E1306C',
                       padding: '4px 10px',
                       borderRadius: '6px',
@@ -2800,7 +2850,7 @@ function ReviewSection({
                     }}>
                       {post.platform}
                     </span>
-                    <span style={{ 
+                    <span style={{
                       background: post.status === 'posted' ? '#10b981' : post.status === 'pending' ? '#f59e0b' : '#ef4444',
                       padding: '4px 10px',
                       borderRadius: '6px',
@@ -2813,21 +2863,21 @@ function ReviewSection({
                       Cell {post.cellLetter}
                     </span>
                   </div>
-                  
+
                   <p style={{ fontSize: '14px', marginBottom: '8px', lineHeight: 1.5 }}>
                     {post.caption}
                   </p>
-                  
+
                   <p style={{ fontSize: '13px', color: '#10b981', marginBottom: '8px' }}>
                     {post.hashtags.join(' ')}
                   </p>
-                  
+
                   {post.musicUrl && (
                     <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>
                       🎵 Music: {post.musicUrl}
                     </p>
                   )}
-                  
+
                   <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '8px' }}>
                     Posted: {post.postedAt.toLocaleString()}
                   </p>

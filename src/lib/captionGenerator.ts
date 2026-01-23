@@ -6,7 +6,7 @@ export function isQuotaExhausted(): boolean {
   // Reset flag after 24 hours (quota resets daily)
   if (quotaExhausted && Date.now() - quotaExhaustedTimestamp > 24 * 60 * 60 * 1000) {
     quotaExhausted = false;
-    console.log('Quota exhaustion flag reset');
+    console.log('[CaptionGenerator] Quota exhaustion flag reset');
   }
   return quotaExhausted;
 }
@@ -17,38 +17,30 @@ export function getQuotaExhaustedMessage(): string {
 
 export async function generateCaption(
   imageUrl: string,
-  groqApiKey: string,
+  apiKey: string,
   serviceType: 'hair' | 'nail' | 'tattoo' | 'massage' | 'facial' | 'glow'
-): Promise<string> {
-  // Return fallback immediately if quota exhausted (avoids wasted API calls)
-  if (quotaExhausted) {
-    const fallbacks: Record<string, string> = {
-      hair: 'Stunning new look ✨ Loving this transformation',
-      nail: 'Nail goals achieved 💅 Custom luxury',
-      tattoo: 'Custom ink 🖤 Artwork at its finest',
-      massage: 'Pure relaxation 🧘 Zen mode activated',
-      facial: 'Glowing skin ✨ Treatment goals',
-      glow: 'That salon glow ✨ Beautiful you'
-    };
-    return fallbacks[serviceType] || 'Beautiful salon service ✨';
-  }
+): Promise<{ caption: string; hashtags: string }> {
+  console.log(`[CaptionGenerator] Starting caption generation for ${serviceType}`);
 
-  // Return fallback immediately if no API key (avoids wasting API calls on config errors)
-  if (!groqApiKey || groqApiKey.trim() === '') {
-    const fallbacks: Record<string, string> = {
-      hair: 'Stunning new look ✨ Loving this transformation',
-      nail: 'Nail goals achieved 💅 Custom luxury',
-      tattoo: 'Custom ink 🖤 Artwork at its finest',
-      massage: 'Pure relaxation 🧘 Zen mode activated',
-      facial: 'Glowing skin ✨ Treatment goals',
-      glow: 'That salon glow ✨ Beautiful you'
-    };
-    return fallbacks[serviceType] || 'Beautiful salon service ✨';
+  const fallbacks: Record<string, { caption: string; hashtags: string }> = {
+    hair: { caption: 'Stunning new look ✨ Loving this transformation', hashtags: '#HairGoals #SalonTransformation #ZaviraSalon' },
+    nail: { caption: 'Nail goals achieved 💅 Custom luxury', hashtags: '#NailArt #LuxuryNails #ZaviraSalon' },
+    tattoo: { caption: 'Custom ink 🖤 Artwork at its finest', hashtags: '#TattooArt #CustomInk #ZaviraSalon' },
+    massage: { caption: 'Pure relaxation 🧘 Zen mode activated', hashtags: '#Wellness #MassageTherapy #ZaviraSalon' },
+    facial: { caption: 'Glowing skin ✨ Treatment goals', hashtags: '#Skincare #FacialGlow #ZaviraSalon' },
+    glow: { caption: 'That salon glow ✨ Beautiful you', hashtags: '#SalonGlow #Beauty #ZaviraSalon' }
+  };
+
+  // Return fallback if quota exhausted
+  if (quotaExhausted) {
+    console.log('[CaptionGenerator] Quota exhausted, using fallback');
+    return fallbacks[serviceType] || { caption: 'Beautiful salon service ✨', hashtags: '#ZaviraSalon #Winnipeg' };
   }
 
   try {
-    // Call Vercel serverless function instead of direct API call
-    // This avoids CORS issues with browser requests
+    console.log('[CaptionGenerator] Calling serverless function /api/generate-caption');
+
+    // Call our serverless function instead of direct API call
     const response = await fetch('/api/generate-caption', {
       method: 'POST',
       headers: {
@@ -66,35 +58,38 @@ export async function generateCaption(
     }
 
     const data = await response.json();
-    const caption = (data.caption || '').trim();
-    return caption || `Beautiful ${serviceType} service at Zavira Salon ✨`;
+    console.log('[CaptionGenerator] Got response:', data);
+
+    // Check if response has caption and hashtags
+    if (data.caption && data.hashtags) {
+      console.log('[CaptionGenerator] Returning API response');
+      return {
+        caption: data.caption.trim(),
+        hashtags: data.hashtags.trim()
+      };
+    }
+
+    // Fallback if response missing fields
+    console.log('[CaptionGenerator] Response missing fields, using fallback');
+    return fallbacks[serviceType] || { caption: 'Beautiful salon service ✨', hashtags: '#ZaviraSalon #Winnipeg' };
+
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('[CaptionGenerator] Error:', errorMessage);
 
     // Detect quota exhaustion and set flag to prevent further API calls
     if (
       errorMessage.includes('429') ||
       errorMessage.includes('quota') ||
       errorMessage.includes('Quota exceeded') ||
-      errorMessage.includes('rate_limit') ||
-      errorMessage.includes('overloaded')
+      errorMessage.includes('rate_limit')
     ) {
       quotaExhausted = true;
       quotaExhaustedTimestamp = Date.now();
-      console.warn('⚠️ Groq API quota exhausted. Switching to fallback captions for next 24 hours.');
-    } else {
-      console.error('Error generating caption:', errorMessage);
+      console.warn('⚠️ API quota exhausted. Switching to fallback captions for next 24 hours.');
     }
 
-    // Return generic fallback if generation fails
-    const fallbacks: Record<string, string> = {
-      hair: 'Stunning new look ✨ Loving this transformation',
-      nail: 'Nail goals achieved 💅 Custom luxury',
-      tattoo: 'Custom ink 🖤 Artwork at its finest',
-      massage: 'Pure relaxation 🧘 Zen mode activated',
-      facial: 'Glowing skin ✨ Treatment goals',
-      glow: 'That salon glow ✨ Beautiful you'
-    };
-    return fallbacks[serviceType] || 'Beautiful salon service ✨';
+    // Return fallback
+    return fallbacks[serviceType] || { caption: 'Beautiful salon service ✨', hashtags: '#ZaviraSalon #Winnipeg' };
   }
 }

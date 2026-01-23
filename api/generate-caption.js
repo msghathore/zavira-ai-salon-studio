@@ -21,75 +21,117 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Image URL required' });
     }
 
-    // Use Together AI free tier (no auth required, generous free limits)
-    const prompt = `You are a luxury salon social media expert creating Instagram captions.
-For a ${serviceType} salon service image, write a SHORT caption (1-2 sentences) that:
-- Describes the specific service/style
-- Includes 2-3 salon emojis
-- Sounds trendy and luxurious
-- NO hashtags, NO calls to action
+    const apiKey = process.env.VITE_LAOZHANG_API_KEY;
 
-Examples:
-Hair: "Dimensional blonde balayage with soft waves ✨💛 Total transformation"
-Nails: "Matte black with rose gold accents 💅✨ Custom luxury"
-Tattoo: "Geometric linework design 🖤 Artwork at its finest"
+    if (!apiKey) {
+      console.warn('LAOZHANG_API_KEY not configured, using fallback captions');
+      return res.status(200).json({
+        caption: 'Beautiful salon service ✨',
+        hashtags: '#ZaviraSalon #SalonGlow'
+      });
+    }
 
-Generate ONE caption text ONLY:`;
+    // Fetch image and convert to base64
+    let imageBase64 = '';
+    let mimeType = 'image/jpeg';
 
-    // Use free inference model via Together API (no key needed for basic use)
-    const caption = await generateCaptionWithAI(prompt, serviceType);
+    if (imageUrl.startsWith('data:')) {
+      const match = imageUrl.match(/^data:([^;]+);base64,(.+)$/);
+      if (match) {
+        mimeType = match[1];
+        imageBase64 = match[2];
+      }
+    } else {
+      try {
+        const imgRes = await fetch(imageUrl);
+        if (!imgRes.ok) throw new Error('Failed to fetch image');
+        const blob = await imgRes.blob();
+        mimeType = blob.type || 'image/jpeg';
+        const arrayBuffer = await blob.arrayBuffer();
+        imageBase64 = Buffer.from(arrayBuffer).toString('base64');
+      } catch (e) {
+        console.warn('Image fetch failed, using fallback');
+        return res.status(200).json({
+          caption: 'Beautiful salon service ✨',
+          hashtags: '#ZaviraSalon #SalonGlow'
+        });
+      }
+    }
 
-    return res.status(200).json({ caption: caption || `Beautiful ${serviceType} service at Zavira Salon ✨` });
+    // Call Gemini 1.5 Flash via Lao Zhang API
+    const prompt = `You are a luxury salon social media expert.
+Analyze this ${serviceType} service image and create:
+1. A SHORT, captivating Instagram caption (1-2 sentences).
+2. A list of 5-8 trending salon hashtags.
 
-  } catch (error) {
-    console.error('Caption generation error:', error);
-    return res.status(500).json({
-      error: error.message,
-      caption: 'Beautiful salon service ✨'
-    });
-  }
-}
+Style: High-end, trendy, professional.
+Focus on the technique, colors, finishes, and the transformation/glow effect.
 
-async function generateCaptionWithAI(prompt, serviceType) {
-  // Try different free API endpoints
+Return ONLY a JSON object with exactly these fields:
+{
+  "caption": "Your caption here (1-2 sentences max)",
+  "hashtags": "#tag1 #tag2 #tag3 #tag4 #tag5"
+}`;
 
-  // Option 1: Hugging Face inference (if available)
-  try {
-    const response = await fetch('https://router.huggingface.co/models/NousResearch/Nous-Hermes-2-Mistral-7B-DPO', {
+    const response = await fetch('https://api.laozhang.ai/v1beta/models/gemini-1.5-flash:generateContent', {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        inputs: prompt,
-        parameters: {
-          max_new_tokens: 100,
-          temperature: 0.7
+        contents: [{
+          parts: [
+            { inline_data: { mime_type: mimeType, data: imageBase64 } },
+            { text: prompt }
+          ]
+        }],
+        generationConfig: {
+          response_mime_type: 'application/json',
+          temperature: 0.7,
+          max_output_tokens: 200,
         }
       }),
-      timeout: 15000
     });
 
-    if (response.ok) {
-      const data = await response.json();
-      const text = Array.isArray(data) ? data[0]?.generated_text : data?.generated_text;
-      if (text) {
-        return text.replace(prompt, '').trim().substring(0, 200);
-      }
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('Gemini API Error:', response.status, errText);
+      throw new Error(`AI API failed: ${response.status}`);
     }
-  } catch (err) {
-    console.warn('HF API failed, trying fallback');
+
+    const result = await response.json();
+    const content = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!content) {
+      console.warn('Empty response from AI, using fallback');
+      return res.status(200).json({
+        caption: 'Beautiful salon service ✨',
+        hashtags: '#ZaviraSalon #SalonLife'
+      });
+    }
+
+    try {
+      const parsed = JSON.parse(content);
+      console.log('Successfully generated caption:', parsed);
+      return res.status(200).json({
+        caption: parsed.caption || 'Beautiful salon service ✨',
+        hashtags: parsed.hashtags || '#ZaviraSalon #SalonGlow'
+      });
+    } catch (e) {
+      console.warn('JSON parse failed, using content as fallback');
+      return res.status(200).json({
+        caption: content.substring(0, 200),
+        hashtags: '#ZaviraSalon #SalonLife'
+      });
+    }
+
+  } catch (error) {
+    console.error('Caption generation error:', error.message);
+    return res.status(500).json({
+      error: error.message,
+      caption: 'Beautiful salon service ✨',
+      hashtags: '#ZaviraSalon #SalonLife'
+    });
   }
-
-  // Fallback: Generate quality default captions based on service
-  const captions = {
-    hair: 'Stunning new look ✨ Your hair deserves this glow',
-    nail: 'Nail artistry at its finest 💅✨ Custom luxury vibes',
-    tattoo: 'Timeless ink design 🖤 Art that tells your story',
-    massage: 'Pure relaxation mode activated 🧘✨ Wellness goals',
-    facial: 'Glowing from within ✨ Your skin deserves this treat',
-    glow: 'That salon glow ✨ Radiating confidence'
-  };
-
-  return captions[serviceType] || captions.glow;
 }
