@@ -19,7 +19,7 @@ import {
 } from './lib/supabase';
 import { getTrendingTracks, AudiusTrack } from './lib/audius';
 import { trackImageGeneration } from './components/BudgetTracker';
-import { generateCaption } from './lib/captionGenerator';
+import { generateCaption, isQuotaExhausted, getQuotaExhaustedMessage } from './lib/captionGenerator';
 
 interface Element {
   id: string;
@@ -2077,6 +2077,20 @@ function PostSection({
         return;
       }
 
+      // Skip API call if quota is exhausted
+      if (isQuotaExhausted()) {
+        const categoryName = selectedPostImage.generationId === 'uploaded'
+          ? 'Salon'
+          : generations.find(g => g.id === selectedPostImage.generationId)?.categoryName || 'Salon';
+        const fallback = `Beautiful ${categoryName} service at Zavira Salon ✨`;
+        setCaptionCache(prev => ({
+          ...prev,
+          [selectedPostImage.url]: fallback
+        }));
+        setCaption(fallback);
+        return;
+      }
+
       if (!GOOGLE_API_KEY) {
         setCaption('⚠️ Google API key not configured');
         return;
@@ -2363,6 +2377,22 @@ function PostSection({
                     </button>
                   ))}
                 </div>
+
+                {/* Quota Warning */}
+                {isQuotaExhausted() && (
+                  <div style={{
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    background: 'rgba(255, 193, 7, 0.1)',
+                    border: '1px solid rgba(255, 193, 7, 0.3)',
+                    color: '#FFC107',
+                    fontSize: '12px',
+                    marginBottom: '12px',
+                    textAlign: 'center',
+                  }}>
+                    ⚠️ {getQuotaExhaustedMessage()}
+                  </div>
+                )}
 
                 {/* Caption */}
                 <textarea
