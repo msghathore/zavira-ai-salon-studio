@@ -55,6 +55,7 @@ export async function generateCaption(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        imageUrl,
         serviceType,
       }),
     });
