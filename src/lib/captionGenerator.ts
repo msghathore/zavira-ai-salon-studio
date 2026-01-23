@@ -1,11 +1,43 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
+// Rate limiting helpers
+let lastRequestTime = 0;
+const REQUEST_DELAY = 1000; // Minimum 1 second between requests
+
+async function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function enforceRateLimit(): Promise<void> {
+  const timeSinceLastRequest = Date.now() - lastRequestTime;
+  if (timeSinceLastRequest < REQUEST_DELAY) {
+    await delay(REQUEST_DELAY - timeSinceLastRequest);
+  }
+  lastRequestTime = Date.now();
+}
+
 export async function generateCaption(
   imageUrl: string,
   googleApiKey: string,
   serviceType: 'hair' | 'nail' | 'tattoo' | 'massage' | 'facial' | 'glow'
 ): Promise<string> {
+  // Return fallback immediately if no API key (avoids wasting API calls on config errors)
+  if (!googleApiKey || googleApiKey.trim() === '') {
+    const fallbacks: Record<string, string> = {
+      hair: 'Stunning new look ✨ Loving this transformation',
+      nail: 'Nail goals achieved 💅 Custom luxury',
+      tattoo: 'Custom ink 🖤 Artwork at its finest',
+      massage: 'Pure relaxation 🧘 Zen mode activated',
+      facial: 'Glowing skin ✨ Treatment goals',
+      glow: 'That salon glow ✨ Beautiful you'
+    };
+    return fallbacks[serviceType] || 'Beautiful salon service ✨';
+  }
+
   try {
+    // Enforce rate limiting before making API call
+    await enforceRateLimit();
+
     const client = new GoogleGenerativeAI(googleApiKey);
 
     // Use cheapest vision model: gemini-2.0-flash (or fallback to gemini-1.5-flash)
@@ -82,6 +114,13 @@ Write ONLY the caption text, nothing else. Be specific to what you see.`;
     return caption || `Beautiful ${serviceType} service at Zavira Salon ✨`;
   } catch (error) {
     console.error('Error generating caption:', error);
+
+    // Check if this is a rate limit error (429)
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Quota exceeded')) {
+      console.warn('Rate limit exceeded. Using fallback caption.');
+    }
+
     // Return generic fallback if generation fails
     const fallbacks: Record<string, string> = {
       hair: 'Stunning new look ✨ Loving this transformation',

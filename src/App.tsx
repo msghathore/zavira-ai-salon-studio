@@ -2126,7 +2126,7 @@ function PostSection({
     };
 
     autoGenerateCaption();
-  }, [selectedPostImage, generations, GOOGLE_API_KEY, captionCache]);
+  }, [selectedPostImage, generations, GOOGLE_API_KEY]);
 
   const handlePlayPause = () => {
     if (!trendingTrack) return;
