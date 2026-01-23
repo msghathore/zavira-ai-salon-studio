@@ -57,7 +57,9 @@ export default function ReviewPanel() {
 
       if (trendingTrack.stream_url) {
         const newAudio = new Audio(trendingTrack.stream_url);
-        newAudio.play().catch(err => console.error('Playback error:', err));
+        newAudio.play().catch(() => {
+          // Playback failed - continue silently
+        });
         setAudio(newAudio);
         setPlayingTrackId(trendingTrack.id);
 

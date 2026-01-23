@@ -86,6 +86,7 @@ export default function App() {
   const [refPhotosToUse, setRefPhotosToUse] = useState<number>(0);
   const [gridPromptText, setGridPromptText] = useState<string>('');
   const [uploadedImages, setUploadedImages] = useState<{url: string, name: string}[]>([]);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const gridImageRef = useRef<HTMLDivElement>(null);
   const userIdRef = useRef<string>(getUserId());
   
@@ -95,8 +96,8 @@ export default function App() {
     { id: 'elements', label: 'Elements', icon: '📦' },
     { id: 'generate', label: 'Generate', icon: '✨' },
     { id: 'saved', label: 'Saved', icon: '💾', badge: generations.length },
-    { id: 'usage', label: 'Usage', icon: '📊' },
     { id: 'post', label: 'Post', icon: '🚀' },
+    { id: 'usage', label: 'Usage', icon: '📊' },
     { id: 'review', label: 'Review', icon: '✅' },
   ];
   
@@ -172,7 +173,6 @@ export default function App() {
             });
             
             if (cleanedElements.length !== localElements.length) {
-              console.log(`Cleaned ${localElements.length - cleanedElements.length} invalid elements`);
               localStorage.setItem('zavira_elements', JSON.stringify(cleanedElements));
             }
             
@@ -204,7 +204,6 @@ export default function App() {
           } catch {}
         }
       } catch (err) {
-        console.error('Error loading data:', err);
       } finally {
         setIsLoading(false);
       }
@@ -239,17 +238,13 @@ export default function App() {
   const syncElements = async (newElements: Element[]) => {
     setElements(newElements);
     localStorage.setItem('zavira_elements', JSON.stringify(newElements));
-    console.log('Saved to localStorage, elements count:', newElements.length);
-    console.log('First element photos:', newElements[0]?.photoUrls?.length);
     
     if (supabaseReady) {
       try {
         for (const element of newElements) {
           await supabaseSaveElement(userIdRef.current, element);
         }
-        console.log('Synced to Supabase');
       } catch (err) {
-        console.error('Error syncing elements to Supabase:', err);
       }
     }
   };
@@ -265,7 +260,6 @@ export default function App() {
           await supabaseSaveGeneration(userIdRef.current, gen);
         }
       } catch (err) {
-        console.error('Error syncing generations to Supabase:', err);
       }
     }
   };
@@ -324,7 +318,9 @@ export default function App() {
               musicUrl,
               platform,
             }),
-          }).catch(err => console.error('Webhook error:', err));
+          }).catch(() => {
+            // Webhook error - continue silently
+          });
         }
       }
 
@@ -372,7 +368,6 @@ export default function App() {
         createdAt: editingElement.createdAt || new Date(),
       };
 
-      console.log('Saving element with photos:', newElement.photoUrls.length);
 
       const existingIndex = elements.findIndex(e => e.id === newElement.id);
       if (existingIndex >= 0) {
@@ -386,7 +381,6 @@ export default function App() {
       setIsEditingElement(false);
       setEditingElement(null);
     } catch (err: any) {
-      console.error('Save error:', err);
       setError(err.message);
     } finally {
       setIsUploading(false);
@@ -412,23 +406,17 @@ export default function App() {
     setIsUploading(true);
     try {
       const files = Array.from(e.target.files);
-      console.log(`Uploading ${files.length} photos...`);
       for (const file of files) {
-        console.log('Uploading file:', file.name);
         const url = await supabaseUploadPhoto(userIdRef.current, file);
-        console.log('Uploaded URL:', url);
         if (url) {
           setEditingElement(prev => prev ? {
             ...prev,
             photoUrls: [...(prev.photoUrls || []), url],
           } : null);
         } else {
-          console.error('Failed to upload photo:', file.name);
         }
       }
-      console.log('Total photos in editingElement:', editingElement?.photoUrls?.length);
     } catch (err: any) {
-      console.error('Upload error:', err);
       setError(err.message);
     } finally {
       setIsUploading(false);
@@ -687,9 +675,7 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
       if (supabaseReady && userIdRef.current) {
         try {
           await supabaseSaveGeneration(userIdRef.current, newGeneration);
-          console.log('✅ Grid saved to Supabase');
         } catch (err) {
-          console.error('❌ Failed to save grid to Supabase:', err);
         }
       }
 
@@ -811,10 +797,8 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
               cells: gridCells,
               totalCost: updatedGen.totalCost + (selectedCells.length * 0.05)
             });
-            console.log('✅ Full images saved to Supabase');
           }
         } catch (err) {
-          console.error('❌ Failed to save full images to Supabase:', err);
         }
       }
 
@@ -831,11 +815,6 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
 
   // Debug logging
   useEffect(() => {
-    console.log('🔍 Debug Info:');
-    console.log('Total elements:', elements.length);
-    console.log('Selected category:', selectedCategory);
-    console.log('Category elements:', categoryElements.length);
-    console.log('All elements:', elements.map(e => ({ id: e.id, name: e.name, category: e.category })));
   }, [elements.length, selectedCategory, categoryElements.length]);
 
   return (
@@ -1708,11 +1687,13 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
                       padding: '12px',
                       maxHeight: '200px',
                       overflow: 'auto',
+                      cursor: 'pointer',
                     }}>
                       <img
                         src={gen.gridUrl}
                         alt={`Grid ${idx + 1}`}
-                        style={{ width: '100%', height: 'auto', borderRadius: '8px' }}
+                        onClick={() => setPreviewImage(gen.gridUrl)}
+                        style={{ width: '100%', height: 'auto', borderRadius: '8px', cursor: 'pointer' }}
                       />
                     </div>
                     <div style={{ padding: '16px' }}>
@@ -1783,6 +1764,61 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
           <ReviewSection generations={generations} postedContent={postedContent} />
         )}
       </main>
+
+      {/* === IMAGE PREVIEW MODAL === */}
+      {previewImage && (
+        <div
+          onClick={() => setPreviewImage(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.95)',
+            zIndex: 300,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+          }}>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'relative',
+              maxWidth: '90vw',
+              maxHeight: '90vh',
+            }}>
+            <img
+              src={previewImage}
+              alt="Preview"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+                borderRadius: '8px',
+              }}
+            />
+            <button
+              onClick={() => setPreviewImage(null)}
+              style={{
+                position: 'absolute',
+                top: '20px',
+                right: '20px',
+                background: 'rgba(255,255,255,0.1)',
+                border: '1px solid rgba(255,255,255,0.3)',
+                color: '#fff',
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                fontSize: '20px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* === EDIT ELEMENT MODAL === */}
       {isEditingElement && editingElement && (
@@ -2037,7 +2073,6 @@ function PostSection({
         );
         setCaption(aiCaption);
       } catch (error) {
-        console.error('Error generating caption:', error);
         setCaption(`Beautiful ${generation.categoryName} service at Zavira Salon ✨`);
       }
     };
@@ -2060,7 +2095,9 @@ function PostSection({
 
       if (trendingTrack.stream_url) {
         const newAudio = new Audio(trendingTrack.stream_url);
-        newAudio.play().catch(err => console.error('Playback error:', err));
+        newAudio.play().catch(() => {
+          // Playback failed - continue silently
+        });
         setAudio(newAudio);
         setPlayingTrackId(trendingTrack.id);
 

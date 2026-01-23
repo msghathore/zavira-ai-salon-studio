@@ -41,16 +41,13 @@ export default function PhotoUploader() {
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        console.log(`Uploading photo ${i + 1}/${files.length}: ${file.name}`);
 
         // Upload to Supabase
         const url = await uploadPhoto(userId, file);
         if (!url) {
-          console.error(`Failed to upload ${file.name}`);
           continue;
         }
 
-        console.log(`✅ Uploaded to Supabase: ${url}`);
 
         // Auto-categorize using Gemini API
         try {
@@ -70,7 +67,6 @@ export default function PhotoUploader() {
             imageSize: '1K',
           });
 
-          console.log(`✅ Processed with Gemini API`);
 
           newPhotos.push({
             url,
@@ -78,7 +74,6 @@ export default function PhotoUploader() {
             file,
           });
         } catch (apiError) {
-          console.error('Gemini API error:', apiError);
           // Still add the photo even if API fails
           newPhotos.push({
             url,
@@ -89,9 +84,7 @@ export default function PhotoUploader() {
       }
 
       setUploadedPhotos((prev) => [...prev, ...newPhotos]);
-      console.log(`✅ Successfully uploaded ${newPhotos.length} photos`);
     } catch (err) {
-      console.error('Upload error:', err);
       setError(err instanceof Error ? err.message : 'Failed to upload photos');
     } finally {
       setUploading(false);

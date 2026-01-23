@@ -49,7 +49,9 @@ export default function TrendingPanel() {
       
       if (track.stream_url) {
         const newAudio = new Audio(track.stream_url);
-        newAudio.play().catch(err => console.error('Playback error:', err));
+        newAudio.play().catch(() => {
+          // Playback failed - continue silently
+        });
         setAudio(newAudio);
         setPlayingTrackId(track.id);
         
