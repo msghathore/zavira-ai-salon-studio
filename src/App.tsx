@@ -2038,6 +2038,7 @@ function PostSection({
   const [platform, setPlatform] = useState<'tiktok' | 'instagram'>('tiktok');
   const [isPosting, setIsPosting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [captionCache, setCaptionCache] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchTrendingTrack = async () => {
@@ -2063,10 +2064,16 @@ function PostSection({
     };
   }, [audio]);
 
-  // Auto-generate caption when image is selected
+  // Auto-generate caption when image is selected (cached to avoid duplicate API calls)
   useEffect(() => {
     const autoGenerateCaption = async () => {
       if (!selectedPostImage) {
+        return;
+      }
+
+      // Check if caption is already cached for this image
+      if (captionCache[selectedPostImage.url]) {
+        setCaption(captionCache[selectedPostImage.url]);
         return;
       }
 
@@ -2097,16 +2104,29 @@ function PostSection({
           GOOGLE_API_KEY,
           serviceType
         );
+
+        // Cache the caption so we don't call API again for this image
+        setCaptionCache(prev => ({
+          ...prev,
+          [selectedPostImage.url]: aiCaption
+        }));
         setCaption(aiCaption);
       } catch (error) {
         // Fallback caption
         const categoryName = generation?.categoryName || 'Salon';
-        setCaption(`Beautiful ${categoryName} service at Zavira Salon ✨`);
+        const fallback = `Beautiful ${categoryName} service at Zavira Salon ✨`;
+
+        // Cache fallback too
+        setCaptionCache(prev => ({
+          ...prev,
+          [selectedPostImage.url]: fallback
+        }));
+        setCaption(fallback);
       }
     };
 
     autoGenerateCaption();
-  }, [selectedPostImage, generations, GOOGLE_API_KEY]);
+  }, [selectedPostImage, generations, GOOGLE_API_KEY, captionCache]);
 
   const handlePlayPause = () => {
     if (!trendingTrack) return;
