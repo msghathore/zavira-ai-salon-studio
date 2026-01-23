@@ -19,6 +19,7 @@ import {
 } from './lib/supabase';
 import { getTrendingTracks, AudiusTrack } from './lib/audius';
 import { trackImageGeneration } from './components/BudgetTracker';
+import { generateCaption } from './lib/captionGenerator';
 
 interface Element {
   id: string;
@@ -1981,7 +1982,8 @@ function PostSection({
   setSelectedPostImage: (img: {url: string, letter: string, generationId: string} | null) => void;
   uploadedImages: {url: string, name: string}[];
   setUploadedImages: Dispatch<SetStateAction<{url: string, name: string}[]>>;
- }) {
+}) {
+  const GOOGLE_API_KEY = import.meta.env['VITE_GOOGLE_API_KEY'] || '';
   const [caption, setCaption] = useState('');
   const [hashtags, setHashtags] = useState('#ZaviraSalon #Winnipeg #HairSalon');
   const [musicUrl, setMusicUrl] = useState('');
@@ -2016,6 +2018,32 @@ function PostSection({
       }
     };
   }, [audio]);
+
+  // Auto-generate caption when image is selected
+  useEffect(() => {
+    const autoGenerateCaption = async () => {
+      if (!selectedPostImage || !GOOGLE_API_KEY) return;
+
+      // Find the generation that contains this image
+      const generation = generations.find(g => g.id === selectedPostImage.generationId);
+      if (!generation) return;
+
+      try {
+        setCaption('Generating caption...'); // Show loading state
+        const aiCaption = await generateCaption(
+          selectedPostImage.url,
+          GOOGLE_API_KEY,
+          (generation.categoryName.toLowerCase() as 'hair' | 'nail' | 'tattoo' | 'massage' | 'facial' | 'glow')
+        );
+        setCaption(aiCaption);
+      } catch (error) {
+        console.error('Error generating caption:', error);
+        setCaption(`Beautiful ${generation.categoryName} service at Zavira Salon ✨`);
+      }
+    };
+
+    autoGenerateCaption();
+  }, [selectedPostImage, generations, GOOGLE_API_KEY]);
 
   const handlePlayPause = () => {
     if (!trendingTrack) return;
