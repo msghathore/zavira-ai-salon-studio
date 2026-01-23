@@ -1819,12 +1819,12 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
 }
 
 // Post Section - SIMPLE
-function PostSection({ 
-  generations, 
+function PostSection({
+  generations,
   onPost,
   selectedPostImage,
   setSelectedPostImage
-}: { 
+}: {
   generations: Generation[];
   onPost: (image: {url: string, letter: string, generationId: string}, caption: string, hashtags: string[], musicUrl: string, platform: 'tiktok' | 'instagram') => Promise<void>;
   selectedPostImage: {url: string, letter: string, generationId: string} | null;
@@ -1840,6 +1840,7 @@ function PostSection({
   const [platform, setPlatform] = useState<'tiktok' | 'instagram'>('tiktok');
   const [isPosting, setIsPosting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [uploadedImages, setUploadedImages] = useState<{url: string, name: string}[]>([]);
 
   useEffect(() => {
     const fetchTrendingTrack = async () => {
@@ -1891,13 +1892,38 @@ function PostSection({
     }
   };
 
-  const completedImages = generations.flatMap(gen => 
-    gen.cells.filter(c => c.resultUrl).map(c => ({
-      url: c.resultUrl!,
-      letter: c.letter,
-      generationId: gen.id,
-    }))
-  );
+  const handleUploadImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        setUploadedImages(prev => [...prev, {
+          url: dataUrl,
+          name: file.name
+        }]);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const completedImages = [
+    ...uploadedImages.map(img => ({
+      url: img.url,
+      letter: img.name.split('.')[0].substring(0, 10),
+      generationId: 'uploaded',
+    })),
+    ...generations.flatMap(gen =>
+      gen.cells.filter(c => c.resultUrl).map(c => ({
+        url: c.resultUrl!,
+        letter: c.letter,
+        generationId: gen.id,
+      }))
+    )
+  ];
 
   const handlePreview = () => {
     setShowPreview(true);
@@ -1917,9 +1943,18 @@ function PostSection({
   };
 
   const quickTemplates = [
-    { label: 'Hair ✨', caption: 'Transform your look! ✨ Book at Zavira Salon' },
-    { label: 'Nail 💅', caption: 'Fresh nails who dis 💅 Book your appointment!' },
-    { label: 'Tattoo 🖊️', caption: 'Art that lasts forever 🖊️ Custom designs available' },
+    { label: 'Hair ✨', caption: 'Transform your look! ✨ Book at Zavira Salon #HairTransformation' },
+    { label: 'Nail 💅', caption: 'Fresh nails, fresh vibes 💅 Book your appointment! #NailArt' },
+    { label: 'Tattoo 🖊️', caption: 'Art that lasts forever 🖊️ Custom designs available #TattooArt' },
+    { label: 'Glow ✨', caption: 'Feeling fabulous! ✨ Come get your glow at Zavira #SalonGlow' },
+    { label: 'Trendy 🔥', caption: '2026 hair trends are HERE! 🔥 What\'s your vibe? #HairTrends' },
+  ];
+
+  const trendingHashtags = [
+    '#ZaviraSalon #Winnipeg #SalonLife #BeautyServices',
+    '#TrendingHair #SalonVibes #BeautyTransformation #LocalBusiness',
+    '#SalonGlow #BeautyGoals #HairOfTheDay #NailArt',
+    '#FYP #ForYouPage #Trending #BeautyTok #SalonAesthetic',
   ];
 
   const formatDuration = (seconds: number): string => {
@@ -1937,8 +1972,38 @@ function PostSection({
     }}>
       <h2 style={{ fontSize: '24px', marginBottom: '8px' }}>🚀 Post Content</h2>
       <p style={{ color: 'rgba(255,255,255,0.5)', marginBottom: '24px' }}>
-        Select an image and click Review & Post to preview before publishing
+        Upload any photo or select a generated image to post with music, captions & hashtags
       </p>
+
+      {/* Upload Button */}
+      <div style={{ marginBottom: '24px' }}>
+        <label style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '12px 20px',
+          borderRadius: '10px',
+          background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+          color: '#fff',
+          cursor: 'pointer',
+          fontSize: '14px',
+          fontWeight: 600,
+        }}>
+          <input
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={handleUploadImage}
+            style={{ display: 'none' }}
+          />
+          📱 + Add Images from Phone
+        </label>
+        {uploadedImages.length > 0 && (
+          <span style={{ marginLeft: '12px', fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>
+            {uploadedImages.length} photo(s) added
+          </span>
+        )}
+      </div>
 
       {completedImages.length === 0 ? (
         <div style={{
@@ -1947,10 +2012,10 @@ function PostSection({
           background: 'rgba(255,255,255,0.02)',
           borderRadius: '16px',
         }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.4 }}>🚀</div>
-          <p style={{ color: 'rgba(255,255,255,0.5)' }}>No images to post</p>
+          <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.4 }}>📸</div>
+          <p style={{ color: 'rgba(255,255,255,0.5)' }}>No images selected</p>
           <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '14px', marginTop: '8px' }}>
-            Generate images first
+            Upload photos from your phone or generate images first
           </p>
         </div>
       ) : (
@@ -1979,13 +2044,17 @@ function PostSection({
                     position: 'absolute',
                     bottom: '4px',
                     left: '4px',
+                    right: '4px',
                     background: 'rgba(0,0,0,0.7)',
-                    padding: '2px 8px',
+                    padding: '2px 6px',
                     borderRadius: '4px',
-                    fontSize: '10px',
+                    fontSize: '9px',
                     fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
                   }}>
-                    {img.letter}
+                    {img.generationId === 'uploaded' ? '📱 ' : '✨ '}{img.letter}
                   </div>
                 </div>
               ))}
@@ -2073,22 +2142,45 @@ function PostSection({
                 </div>
 
                 {/* Hashtags */}
-                <input
-                  type="text"
-                  value={hashtags}
-                  onChange={(e) => setHashtags(e.target.value)}
-                  placeholder="#hashtags"
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(255,255,255,0.15)',
-                    background: 'rgba(0,0,0,0.3)',
-                    color: '#fff',
-                    fontSize: '13px',
-                    marginBottom: '12px',
-                  }}
-                />
+                <div style={{ marginBottom: '12px' }}>
+                  <input
+                    type="text"
+                    value={hashtags}
+                    onChange={(e) => setHashtags(e.target.value)}
+                    placeholder="#hashtags"
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      background: 'rgba(0,0,0,0.3)',
+                      color: '#fff',
+                      fontSize: '13px',
+                      marginBottom: '8px',
+                    }}
+                  />
+                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '6px' }}>Quick hashtags:</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                    {trendingHashtags.map((tags, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setHashtags(tags)}
+                        style={{
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          background: 'rgba(255,255,255,0.08)',
+                          color: 'rgba(255,255,255,0.7)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          cursor: 'pointer',
+                          fontSize: '10px',
+                          fontWeight: 500,
+                        }}
+                      >
+                        {tags.split(' ')[0]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
                 {/* Trending Music */}
                 <div style={{ marginBottom: '12px' }}>
