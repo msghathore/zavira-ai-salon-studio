@@ -2068,20 +2068,31 @@ function PostSection({
     const autoGenerateCaption = async () => {
       if (!selectedPostImage || !GOOGLE_API_KEY) return;
 
-      // Find the generation that contains this image
+      // Find the generation that contains this image (for grid images)
       const generation = generations.find(g => g.id === selectedPostImage.generationId);
-      if (!generation) return;
+      const isUploadedImage = selectedPostImage.generationId === 'uploaded';
+
+      // If it's neither a grid image nor uploaded, skip
+      if (!generation && !isUploadedImage) return;
 
       try {
         setCaption('Generating caption...'); // Show loading state
+
+        // Determine service type from generation or default to 'glow' for uploaded
+        const serviceType = generation
+          ? (generation.categoryName.toLowerCase() as 'hair' | 'nail' | 'tattoo' | 'massage' | 'facial' | 'glow')
+          : 'glow';
+
         const aiCaption = await generateCaption(
           selectedPostImage.url,
           GOOGLE_API_KEY,
-          (generation.categoryName.toLowerCase() as 'hair' | 'nail' | 'tattoo' | 'massage' | 'facial' | 'glow')
+          serviceType
         );
         setCaption(aiCaption);
       } catch (error) {
-        setCaption(`Beautiful ${generation.categoryName} service at Zavira Salon ✨`);
+        // Fallback caption
+        const categoryName = generation?.categoryName || 'Salon';
+        setCaption(`Beautiful ${categoryName} service at Zavira Salon ✨`);
       }
     };
 

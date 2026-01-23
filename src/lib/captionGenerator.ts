@@ -11,14 +11,28 @@ export async function generateCaption(
     // Use cheapest vision model: gemini-2.0-flash (or fallback to gemini-1.5-flash)
     const model = client.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
-    // Fetch image and convert to base64
-    const response = await fetch(imageUrl);
-    const blob = await response.blob();
-    const buffer = await blob.arrayBuffer();
-    // Convert ArrayBuffer to base64 using browser API
-    const uint8Array = new Uint8Array(buffer);
-    const binaryString = Array.from(uint8Array).map(b => String.fromCharCode(b)).join('');
-    const base64 = btoa(binaryString);
+    // Handle both data URLs (uploaded images) and HTTP URLs (generated images)
+    let base64: string;
+    let mimeType = 'image/jpeg';
+
+    if (imageUrl.startsWith('data:')) {
+      // Data URL - extract base64 part directly
+      const parts = imageUrl.split(',');
+      if (parts[0].includes('image/')) {
+        mimeType = parts[0].match(/data:([^;]+)/)?.[1] || 'image/jpeg';
+      }
+      base64 = parts[1];
+    } else {
+      // HTTP URL - fetch and convert to base64
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const buffer = await blob.arrayBuffer();
+      // Convert ArrayBuffer to base64 using browser API
+      const uint8Array = new Uint8Array(buffer);
+      const binaryString = Array.from(uint8Array).map(b => String.fromCharCode(b)).join('');
+      base64 = btoa(binaryString);
+      mimeType = blob.type || 'image/jpeg';
+    }
 
     // Service type descriptions for better captions
     const serviceDescriptions: Record<string, string> = {
@@ -55,7 +69,7 @@ Write ONLY the caption text, nothing else. Be specific to what you see.`;
     const generatedContent = await model.generateContent([
       {
         inlineData: {
-          mimeType: 'image/jpeg',
+          mimeType: mimeType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
           data: base64,
         },
       },
