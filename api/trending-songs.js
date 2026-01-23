@@ -41,6 +41,7 @@ export default async function handler(req, res) {
       artwork: {
         '150x150': track.artwork?.['150x150'] || '',
         '480x480': track.artwork?.['480x480'] || track.artwork?.['150x150'] || '',
+        '1000x1000': track.artwork?.['1000x1000'] || track.artwork?.['480x480'] || track.artwork?.['150x150'] || '',
       },
       stream_url: track.stream_url || '',
       duration: track.duration || 0,
