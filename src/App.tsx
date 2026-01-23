@@ -91,6 +91,7 @@ export default function App() {
   const userIdRef = useRef<string>(getUserId());
   
   const LAOZHANG_API_KEY = (import.meta.env["VITE_LAOZHANG_API_KEY"] || "");
+  const MAKE_WEBHOOK_URL = (import.meta.env["VITE_MAKE_INSTAGRAM_WEBHOOK"] || "");
   
   const tabs = [
     { id: 'elements', label: 'Elements', icon: '📦' },
@@ -302,26 +303,33 @@ export default function App() {
       setPostedContent(updatedPosted);
       localStorage.setItem('zavira_posted', JSON.stringify(updatedPosted));
 
-      // Trigger backend processing (Make.com webhook, etc.)
-      // This would call a Supabase Edge Function
-      if (supabaseReady) {
-        const webhookUrl = localStorage.getItem('make_webhook_url');
-        if (webhookUrl) {
-          fetch(webhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              postedId,
-              imageUrl: image.url,
-              caption,
-              hashtags,
-              musicUrl,
-              platform,
-            }),
-          }).catch(() => {
-            // Webhook error - continue silently
+      // Trigger Make.com webhook to post to Instagram
+      if (MAKE_WEBHOOK_URL) {
+        fetch(MAKE_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            postedId,
+            imageUrl: image.url,
+            caption,
+            hashtags: hashtags.filter(h => h.trim()),
+            musicUrl,
+            platform,
+            timestamp: new Date().toISOString(),
+          }),
+        })
+          .then((response) => {
+            if (response.ok) {
+              // Update status to posted
+              updatePostedStatus(postedId, 'posted', new Date());
+              setPostedContent((prev) =>
+                prev.map((p) => (p.id === postedId ? { ...p, status: 'posted' as const, postedAt: new Date() } : p))
+              );
+            }
+          })
+          .catch(() => {
+            // Webhook error - keep as pending
           });
-        }
       }
 
     } catch (err: any) {
