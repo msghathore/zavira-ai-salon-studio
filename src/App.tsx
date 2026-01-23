@@ -1,4 +1,4 @@
-import React, { useState, useRef, MouseEvent, useCallback, useEffect } from 'react';
+import React, { useState, useRef, MouseEvent, useCallback, useEffect, SetStateAction, Dispatch } from 'react';
 import { generateImage, createLaoZhangClient, ImageGenerationOptions, buildEditPrompt } from './lib/laozhang';
 import { CATEGORIES, DEFAULT_PROMPTS, DEFAULT_NEGATIVE_PROMPTS, CELL_LABELS, Category, generateCellPromptWithVariations } from './data/categories';
 import BudgetTracker from './components/BudgetTracker';
@@ -84,6 +84,7 @@ export default function App() {
   const [selectedPostImage, setSelectedPostImage] = useState<{url: string, letter: string, generationId: string} | null>(null);
   const [refPhotosToUse, setRefPhotosToUse] = useState<number>(0);
   const [gridPromptText, setGridPromptText] = useState<string>('');
+  const [uploadedImages, setUploadedImages] = useState<{url: string, name: string}[]>([]);
   const gridImageRef = useRef<HTMLDivElement>(null);
   const userIdRef = useRef<string>(getUserId());
   
@@ -93,6 +94,7 @@ export default function App() {
     { id: 'elements', label: 'Elements', icon: '📦' },
     { id: 'generate', label: 'Generate', icon: '✨' },
     { id: 'saved', label: 'Saved', icon: '💾', badge: generations.length },
+    { id: 'usage', label: 'Usage', icon: '📊' },
     { id: 'post', label: 'Post', icon: '🚀' },
     { id: 'review', label: 'Review', icon: '✅' },
   ];
@@ -649,7 +651,7 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
         prompt: finalPrompt,
         model: 'nano-banana-pro',
         imageSize: '4K',
-        aspectRatio: '21:9',
+        aspectRatio: '16:9',
         referenceImages: selectedPhotos.length > 0 ? selectedPhotos : undefined,
       };
 
@@ -979,10 +981,6 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
             </button>
           ))}
         </nav>
-
-        <div style={{ marginBottom: '24px', maxWidth: '320px' }}>
-          <BudgetTracker />
-        </div>
 
         {/* Error Display */}
         {error && (
@@ -1399,13 +1397,13 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
                     background: '#0d0d0d',
                     borderRadius: '12px',
                     padding: '12px',
-                    maxHeight: '500px',
+                    aspectRatio: '16/9',
                     overflow: 'auto',
                   }}>
                     <img
                       src={gridUrl}
                       alt="Generated Grid"
-                      style={{ width: '100%', height: 'auto', borderRadius: '8px' }}
+                      style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '8px' }}
                     />
                   </div>
                   <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
@@ -1518,12 +1516,162 @@ ${DEFAULT_NEGATIVE_PROMPTS}`;
 
         {/* === POST TAB === */}
         {activeTab === 'post' && (
-          <PostSection 
+          <PostSection
             generations={generations}
             onPost={handlePost}
             selectedPostImage={selectedPostImage}
             setSelectedPostImage={setSelectedPostImage}
+            uploadedImages={uploadedImages}
+            setUploadedImages={setUploadedImages}
           />
+        )}
+
+        {/* === USAGE TAB === */}
+        {activeTab === 'usage' && (
+          <div>
+            <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '24px' }}>
+              📊 Usage & Billing Tracker
+            </h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+              {/* Images Generated */}
+              <div style={{
+                background: 'rgba(255,255,255,0.02)',
+                borderRadius: '16px',
+                padding: '20px',
+                border: '1px solid rgba(255,255,255,0.05)',
+              }}>
+                <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '12px' }}>
+                  Total Images Generated
+                </div>
+                <div style={{ fontSize: '32px', fontWeight: 700, marginBottom: '16px' }}>
+                  {generations.flatMap(g => g.cells.filter(c => c.resultUrl)).length + uploadedImages.length}
+                </div>
+                <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>
+                  Grid generations: {generations.length}
+                </div>
+              </div>
+
+              {/* Cost Per Generation */}
+              <div style={{
+                background: 'rgba(255,255,255,0.02)',
+                borderRadius: '16px',
+                padding: '20px',
+                border: '1px solid rgba(255,255,255,0.05)',
+              }}>
+                <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '12px' }}>
+                  Cost Per Generation
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                  <span style={{ fontSize: '24px', fontWeight: 700, marginRight: '8px' }}>$</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    defaultValue="0.05"
+                    style={{
+                      flex: 1,
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      background: 'rgba(0,0,0,0.3)',
+                      color: '#fff',
+                      fontSize: '18px',
+                      fontWeight: 700,
+                    }}
+                  />
+                </div>
+                <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
+                  Editable cost per grid or full image
+                </div>
+              </div>
+
+              {/* Total Cost */}
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(16,185,129,0.1) 0%, rgba(5,150,105,0.1) 100%)',
+                borderRadius: '16px',
+                padding: '20px',
+                border: '1px solid rgba(16,185,129,0.3)',
+              }}>
+                <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '12px' }}>
+                  Total Cost (Today)
+                </div>
+                <div style={{ fontSize: '32px', fontWeight: 700, color: '#10b981', marginBottom: '8px' }}>
+                  ${((generations.length * 0.05) + (generations.flatMap(g => g.cells.filter(c => c.resultUrl)).length * 0.05)).toFixed(2)}
+                </div>
+                <div style={{ fontSize: '12px', color: 'rgba(16,185,129,0.8)' }}>
+                  {generations.length} grids + {generations.flatMap(g => g.cells.filter(c => c.resultUrl)).length} full images
+                </div>
+              </div>
+
+              {/* Budget Status */}
+              <div style={{
+                background: 'rgba(255,255,255,0.02)',
+                borderRadius: '16px',
+                padding: '20px',
+                border: '1px solid rgba(255,255,255,0.05)',
+                gridColumn: 'span 1',
+              }}>
+                <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '12px' }}>
+                  Monthly Budget
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                  <span style={{ fontSize: '24px', fontWeight: 700, marginRight: '8px' }}>$</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    defaultValue="50"
+                    style={{
+                      flex: 1,
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      background: 'rgba(0,0,0,0.3)',
+                      color: '#fff',
+                      fontSize: '18px',
+                      fontWeight: 700,
+                    }}
+                  />
+                </div>
+                <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
+                  Set your monthly limit
+                </div>
+              </div>
+            </div>
+
+            {/* Breakdown Table */}
+            <div style={{
+              marginTop: '32px',
+              background: 'rgba(255,255,255,0.02)',
+              borderRadius: '16px',
+              padding: '20px',
+              border: '1px solid rgba(255,255,255,0.05)',
+            }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>
+                Generation History
+              </h3>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                      <th style={{ textAlign: 'left', padding: '12px 0' }}>Type</th>
+                      <th style={{ textAlign: 'left', padding: '12px 0' }}>Category</th>
+                      <th style={{ textAlign: 'left', padding: '12px 0' }}>Created</th>
+                      <th style={{ textAlign: 'right', padding: '12px 0' }}>Cost</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {generations.map(gen => (
+                      <tr key={gen.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                        <td style={{ padding: '12px 0' }}>🖼️ Grid</td>
+                        <td style={{ padding: '12px 0' }}>{gen.categoryName}</td>
+                        <td style={{ padding: '12px 0' }}>{new Date(gen.createdAt).toLocaleDateString()}</td>
+                        <td style={{ textAlign: 'right', padding: '12px 0', color: '#10b981' }}>$0.05</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* === SAVED IMAGES TAB === */}
@@ -1823,12 +1971,16 @@ function PostSection({
   generations,
   onPost,
   selectedPostImage,
-  setSelectedPostImage
+  setSelectedPostImage,
+  uploadedImages,
+  setUploadedImages
 }: {
   generations: Generation[];
   onPost: (image: {url: string, letter: string, generationId: string}, caption: string, hashtags: string[], musicUrl: string, platform: 'tiktok' | 'instagram') => Promise<void>;
   selectedPostImage: {url: string, letter: string, generationId: string} | null;
   setSelectedPostImage: (img: {url: string, letter: string, generationId: string} | null) => void;
+  uploadedImages: {url: string, name: string}[];
+  setUploadedImages: Dispatch<SetStateAction<{url: string, name: string}[]>>;
  }) {
   const [caption, setCaption] = useState('');
   const [hashtags, setHashtags] = useState('#ZaviraSalon #Winnipeg #HairSalon');
@@ -1840,7 +1992,6 @@ function PostSection({
   const [platform, setPlatform] = useState<'tiktok' | 'instagram'>('tiktok');
   const [isPosting, setIsPosting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [uploadedImages, setUploadedImages] = useState<{url: string, name: string}[]>([]);
 
   useEffect(() => {
     const fetchTrendingTrack = async () => {
@@ -1901,7 +2052,7 @@ function PostSection({
       const reader = new FileReader();
       reader.onload = (event) => {
         const dataUrl = event.target?.result as string;
-        setUploadedImages(prev => [...prev, {
+        setUploadedImages((prev: {url: string, name: string}[]) => [...prev, {
           url: dataUrl,
           name: file.name
         }]);

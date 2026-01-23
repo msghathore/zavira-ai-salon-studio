@@ -13,14 +13,8 @@ export interface AudiusTrack {
 }
 
 async function getAudiusHost(): Promise<string> {
-  try {
-    const response = await fetch('https://api.audius.co/v1');
-    const data = await response.json();
-    return data.data?.[0] || 'https://discoveryprovider.audius.co';
-  } catch (error) {
-    console.error('Error fetching Audius host:', error);
-    return 'https://discoveryprovider.audius.co';
-  }
+  // Use hardcoded fallback - Audius API endpoint detection is unreliable
+  return 'https://discoveryprovider.audius.co';
 }
 
 export async function getTrendingTracks(timeRange: 'week' | 'month' | 'allTime' = 'week', limit: number = 10): Promise<AudiusTrack[]> {
