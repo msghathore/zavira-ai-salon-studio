@@ -23,11 +23,18 @@ export default function ReviewPanel() {
   useEffect(() => {
     const fetchTrendingTrack = async () => {
       setLoadingTrack(true);
-      const tracks = await getTrendingTracks('week', 1);
-      if (tracks.length > 0) {
-        setTrendingTrack(tracks[0]);
+      try {
+        const response = await fetch('/api/trending-songs');
+        if (!response.ok) throw new Error('Failed to fetch trending songs');
+        const tracks = await response.json();
+        if (tracks.length > 0) {
+          setTrendingTrack(tracks[0]);
+        }
+      } catch (error) {
+        console.error('[ReviewPanel] Error fetching trending track:', error);
+      } finally {
+        setLoadingTrack(false);
       }
-      setLoadingTrack(false);
     };
 
     fetchTrendingTrack();

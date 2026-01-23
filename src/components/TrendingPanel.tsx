@@ -15,12 +15,19 @@ export default function TrendingPanel() {
   useEffect(() => {
     const fetchTracks = async () => {
       setLoading(true);
-      const trendingTracks = await getTrendingTracks('week', 8);
-      setTracks(trendingTracks);
-      setLoading(false);
-      
-      if (trendingTracks.length > 0 && !selectedTrack) {
-        setSelectedTrack(trendingTracks[0]);
+      try {
+        const response = await fetch('/api/trending-songs');
+        if (!response.ok) throw new Error('Failed to fetch trending songs');
+        const trendingTracks = await response.json();
+        setTracks(trendingTracks);
+
+        if (trendingTracks.length > 0 && !selectedTrack) {
+          setSelectedTrack(trendingTracks[0]);
+        }
+      } catch (error) {
+        console.error('[TrendingPanel] Error fetching tracks:', error);
+      } finally {
+        setLoading(false);
       }
     };
 

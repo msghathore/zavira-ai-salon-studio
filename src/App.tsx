@@ -2046,13 +2046,21 @@ function PostSection({
   useEffect(() => {
     const fetchTrendingTrack = async () => {
       setLoadingTrack(true);
-      const tracks = await getTrendingTracks('week', 1);
-      if (tracks.length > 0) {
-        const track = tracks[0];
-        setTrendingTrack(track);
-        setMusicUrl(track.stream_url || '');
+      try {
+        const response = await fetch('/api/trending-songs');
+        if (!response.ok) throw new Error('Failed to fetch trending songs');
+        const tracks = await response.json();
+        if (tracks.length > 0) {
+          const track = tracks[0];
+          setTrendingTrack(track);
+          setMusicUrl(track.stream_url || '');
+        }
+      } catch (error) {
+        console.error('[App] Error fetching trending tracks:', error);
+        // Fallback to empty state
+      } finally {
+        setLoadingTrack(false);
       }
-      setLoadingTrack(false);
     };
 
     fetchTrendingTrack();
