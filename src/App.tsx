@@ -2027,7 +2027,7 @@ function PostSection({
   uploadedImages: {url: string, name: string}[];
   setUploadedImages: Dispatch<SetStateAction<{url: string, name: string}[]>>;
 }) {
-  const GOOGLE_API_KEY = import.meta.env['VITE_GOOGLE_API_KEY'] || '';
+  const GROQ_API_KEY = import.meta.env['VITE_GROQ_API_KEY'] || '';
   const [caption, setCaption] = useState('');
   const [hashtags, setHashtags] = useState('#ZaviraSalon #Winnipeg #HairSalon');
   const [musicUrl, setMusicUrl] = useState('');
@@ -2091,8 +2091,8 @@ function PostSection({
         return;
       }
 
-      if (!GOOGLE_API_KEY) {
-        setCaption('⚠️ Google API key not configured');
+      if (!GROQ_API_KEY) {
+        setCaption('⚠️ Groq API key not configured');
         return;
       }
 
@@ -2115,7 +2115,7 @@ function PostSection({
 
         const aiCaption = await generateCaption(
           selectedPostImage.url,
-          GOOGLE_API_KEY,
+          GROQ_API_KEY,
           serviceType
         );
 
@@ -2140,7 +2140,7 @@ function PostSection({
     };
 
     autoGenerateCaption();
-  }, [selectedPostImage, generations, GOOGLE_API_KEY]);
+  }, [selectedPostImage, generations, GROQ_API_KEY]);
 
   const handlePlayPause = () => {
     if (!trendingTrack) return;

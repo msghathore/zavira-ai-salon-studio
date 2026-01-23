@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 
 // Quota exhaustion flag - once quota is hit, stop trying to call API
 let quotaExhausted = false;
@@ -14,12 +14,12 @@ export function isQuotaExhausted(): boolean {
 }
 
 export function getQuotaExhaustedMessage(): string {
-  return 'Caption generation paused: Daily API quota exceeded. Using default captions.';
+  return 'Caption generation paused: API quota exceeded. Using default captions.';
 }
 
 export async function generateCaption(
   imageUrl: string,
-  googleApiKey: string,
+  groqApiKey: string,
   serviceType: 'hair' | 'nail' | 'tattoo' | 'massage' | 'facial' | 'glow'
 ): Promise<string> {
   // Return fallback immediately if quota exhausted (avoids wasted API calls)
@@ -36,7 +36,7 @@ export async function generateCaption(
   }
 
   // Return fallback immediately if no API key (avoids wasting API calls on config errors)
-  if (!googleApiKey || googleApiKey.trim() === '') {
+  if (!groqApiKey || groqApiKey.trim() === '') {
     const fallbacks: Record<string, string> = {
       hair: 'Stunning new look ✨ Loving this transformation',
       nail: 'Nail goals achieved 💅 Custom luxury',
@@ -49,34 +49,10 @@ export async function generateCaption(
   }
 
   try {
-
-    const client = new GoogleGenerativeAI(googleApiKey);
-
-    // Use cheapest vision model: gemini-2.0-flash (or fallback to gemini-1.5-flash)
-    const model = client.getGenerativeModel({ model: 'gemini-2.0-flash' });
-
-    // Handle both data URLs (uploaded images) and HTTP URLs (generated images)
-    let base64: string;
-    let mimeType = 'image/jpeg';
-
-    if (imageUrl.startsWith('data:')) {
-      // Data URL - extract base64 part directly
-      const parts = imageUrl.split(',');
-      if (parts[0].includes('image/')) {
-        mimeType = parts[0].match(/data:([^;]+)/)?.[1] || 'image/jpeg';
-      }
-      base64 = parts[1];
-    } else {
-      // HTTP URL - fetch and convert to base64
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      const buffer = await blob.arrayBuffer();
-      // Convert ArrayBuffer to base64 using browser API
-      const uint8Array = new Uint8Array(buffer);
-      const binaryString = Array.from(uint8Array).map(b => String.fromCharCode(b)).join('');
-      base64 = btoa(binaryString);
-      mimeType = blob.type || 'image/jpeg';
-    }
+    const client = new Groq({
+      apiKey: groqApiKey,
+      dangerouslyAllowBrowser: true,
+    });
 
     // Service type descriptions for better captions
     const serviceDescriptions: Record<string, string> = {
@@ -88,10 +64,8 @@ export async function generateCaption(
       glow: 'beauty glow or cosmetic service'
     };
 
-    const prompt = `You are a luxury salon social media expert. Analyze this image of a client receiving ${serviceDescriptions[serviceType] || 'salon service'}.
-
-Write a SHORT, CREATIVE caption (1-2 sentences max) for Instagram/TikTok that:
-1. Describes the specific service/style shown (be specific about colors, techniques, styles)
+    const prompt = `You are a luxury salon social media expert. Generate a SHORT, CREATIVE caption (1-2 sentences max) for Instagram/TikTok for a ${serviceDescriptions[serviceType] || 'salon service'} that:
+1. Describes the specific service (be specific about colors, techniques, styles)
 2. Includes 2-3 relevant salon emojis
 3. Sounds trendy and luxurious (like Vogue or Harper's Bazaar)
 4. Does NOT include hashtags
@@ -108,30 +82,35 @@ Examples for nails:
 Examples for tattoo:
 - "Geometric linework design 🖤 Custom artwork at its finest"
 
-Write ONLY the caption text, nothing else. Be specific to what you see.`;
+Generate ONE unique caption text ONLY, nothing else.`;
 
-    const generatedContent = await model.generateContent([
-      {
-        inlineData: {
-          mimeType: mimeType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
-          data: base64,
+    const response = await client.chat.completions.create({
+      model: 'mixtral-8x7b-32768',
+      max_tokens: 150,
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
         },
-      },
-      {
-        text: prompt,
-      },
-    ]);
+      ],
+    });
 
-    const caption = generatedContent.response.text().trim();
+    const caption = (response.choices[0]?.message?.content || '').trim();
     return caption || `Beautiful ${serviceType} service at Zavira Salon ✨`;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
 
     // Detect quota exhaustion and set flag to prevent further API calls
-    if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Quota exceeded')) {
+    if (
+      errorMessage.includes('429') ||
+      errorMessage.includes('quota') ||
+      errorMessage.includes('Quota exceeded') ||
+      errorMessage.includes('rate_limit') ||
+      errorMessage.includes('overloaded')
+    ) {
       quotaExhausted = true;
       quotaExhaustedTimestamp = Date.now();
-      console.warn('⚠️ Google API quota exhausted. Switching to fallback captions for next 24 hours.');
+      console.warn('⚠️ Groq API quota exhausted. Switching to fallback captions for next 24 hours.');
     } else {
       console.error('Error generating caption:', error);
     }
