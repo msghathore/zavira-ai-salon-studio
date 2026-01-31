@@ -25,10 +25,16 @@ export default async function handler(req, res) {
 
     if (!consumerKey || !consumerSecret || !accessToken || !accessSecret) {
       console.error('[Twitter] Missing credentials');
+      console.error('[Twitter] Has consumerKey:', !!consumerKey);
+      console.error('[Twitter] Has consumerSecret:', !!consumerSecret);
+      console.error('[Twitter] Has accessToken:', !!accessToken);
+      console.error('[Twitter] Has accessSecret:', !!accessSecret);
       throw new Error('Twitter API credentials not configured');
     }
 
     console.log('[Twitter] Credentials loaded');
+    console.log('[Twitter] API Key (first 10):', consumerKey?.substring(0, 10));
+    console.log('[Twitter] Access Token (first 10):', accessToken?.substring(0, 10));
 
     // Initialize Twitter client with OAuth 1.0a
     const client = new TwitterApi({
