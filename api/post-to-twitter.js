@@ -64,11 +64,10 @@ export default async function handler(req, res) {
     const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
     console.log('[Twitter] Video downloaded, size:', videoBuffer.length, 'bytes');
 
-    // Step 2: Upload video to Twitter
-    console.log('[Twitter] Uploading video to X...');
-    const mediaId = await client.v1.uploadMedia(videoBuffer, {
-      mimeType: 'video/mp4',
-      target: 'tweet',
+    // Step 2: Upload video to Twitter using v2 API
+    console.log('[Twitter] Uploading video to X using v2 API...');
+    const mediaId = await client.v2.uploadMedia(videoBuffer, {
+      media_type: 'video/mp4',
     });
 
     console.log('[Twitter] Video uploaded, media_id:', mediaId);
