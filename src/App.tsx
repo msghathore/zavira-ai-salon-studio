@@ -91,7 +91,9 @@ export default function App() {
   const userIdRef = useRef<string>(getUserId());
 
   const LAOZHANG_API_KEY = (import.meta.env["VITE_LAOZHANG_API_KEY"] || "");
-  const MAKE_WEBHOOK_URL = (import.meta.env["VITE_MAKE_INSTAGRAM_WEBHOOK"] || "");
+  const MAKE_WEBHOOK_URL = (import.meta.env["VITE_MAKE_WEBHOOK_URL"] || "");
+  const PABBLY_WEBHOOK_URL = (import.meta.env["VITE_PABBLY_WEBHOOK_URL"] || "");
+  const TWITTER_API_URL = (import.meta.env["VITE_TWITTER_API_URL"] || "");
   const GEMINI_API_KEY = (import.meta.env["VITE_GEMINI_API_KEY"] || "");
 
   const tabs = [
@@ -272,7 +274,7 @@ export default function App() {
     caption: string,
     hashtags: string[],
     musicUrl: string,
-    platform: 'tiktok' | 'instagram'
+    platform: 'instagram' | 'facebook' | 'gmb' | 'twitter' | 'tiktok'
   ) => {
     try {
       // Create posted content record
@@ -304,20 +306,34 @@ export default function App() {
       setPostedContent(updatedPosted);
       localStorage.setItem('zavira_posted', JSON.stringify(updatedPosted));
 
-      // Trigger Make.com webhook to post to Instagram
-      if (MAKE_WEBHOOK_URL) {
-        fetch(MAKE_WEBHOOK_URL, {
+      // Route to the correct endpoint based on platform
+      let webhookUrl = '';
+      let payload: any = {
+        postedId,
+        videoUrl: image.url,
+        caption,
+        hashtags: hashtags.join(' '),
+        timestamp: new Date().toISOString(),
+      };
+
+      // Determine the correct webhook/endpoint
+      if (platform === 'instagram' || platform === 'facebook') {
+        // Make.com handles both Instagram and Facebook
+        webhookUrl = MAKE_WEBHOOK_URL;
+      } else if (platform === 'gmb') {
+        // Pabbly handles Google My Business
+        webhookUrl = PABBLY_WEBHOOK_URL;
+      } else if (platform === 'twitter') {
+        // Twitter uses our Vercel serverless function
+        webhookUrl = TWITTER_API_URL;
+      }
+
+      // Post to the appropriate platform
+      if (webhookUrl) {
+        fetch(webhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            postedId,
-            imageUrl: image.url,
-            caption,
-            hashtags: hashtags.filter(h => h.trim()),
-            musicUrl,
-            platform,
-            timestamp: new Date().toISOString(),
-          }),
+          body: JSON.stringify(payload),
         })
           .then((response) => {
             if (response.ok) {
@@ -2024,7 +2040,7 @@ function PostSection({
   geminiApiKey
 }: {
   generations: Generation[];
-  onPost: (image: { url: string, letter: string, generationId: string }, caption: string, hashtags: string[], musicUrl: string, platform: 'tiktok' | 'instagram') => Promise<void>;
+  onPost: (image: { url: string, letter: string, generationId: string }, caption: string, hashtags: string[], musicUrl: string, platform: 'instagram' | 'facebook' | 'gmb' | 'twitter' | 'tiktok') => Promise<void>;
   selectedPostImage: { url: string, letter: string, generationId: string } | null;
   setSelectedPostImage: (img: { url: string, letter: string, generationId: string } | null) => void;
   uploadedImages: { url: string, name: string }[];
@@ -2038,7 +2054,7 @@ function PostSection({
   const [loadingTrack, setLoadingTrack] = useState(true);
   const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
-  const [platform, setPlatform] = useState<'tiktok' | 'instagram'>('tiktok');
+  const [platform, setPlatform] = useState<'instagram' | 'facebook' | 'gmb' | 'twitter' | 'tiktok'>('instagram');
   const [isPosting, setIsPosting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [captionCache, setCaptionCache] = useState<Record<string, { caption: string, hashtags: string }>>({});
@@ -2395,27 +2411,36 @@ function PostSection({
                 />
 
                 {/* Platform */}
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-                  {(['tiktok', 'instagram'] as const).map(p => (
-                    <button
-                      key={p}
-                      onClick={() => setPlatform(p)}
-                      style={{
-                        flex: 1,
-                        padding: '10px',
-                        borderRadius: '8px',
-                        background: platform === p ? '#10b981' : 'rgba(255,255,255,0.1)',
-                        color: '#fff',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: '13px',
-                        fontWeight: 600,
-                        textTransform: 'capitalize',
-                      }}
-                    >
-                      {p === 'tiktok' ? '🎵 TikTok' : '📷 Instagram'}
-                    </button>
-                  ))}
+                <div style={{ marginBottom: '16px' }}>
+                  <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '8px', fontWeight: 500 }}>
+                    Select Platform
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                    {([
+                      { id: 'instagram', label: '📷 Instagram', color: '#E1306C' },
+                      { id: 'facebook', label: '👍 Facebook', color: '#1877F2' },
+                      { id: 'twitter', label: '🐦 X/Twitter', color: '#1DA1F2' },
+                      { id: 'gmb', label: '📍 GMB', color: '#4285F4' },
+                      { id: 'tiktok', label: '🎵 TikTok', color: '#fe2c55' },
+                    ] as const).map(p => (
+                      <button
+                        key={p.id}
+                        onClick={() => setPlatform(p.id)}
+                        style={{
+                          padding: '10px 8px',
+                          borderRadius: '8px',
+                          background: platform === p.id ? p.color : 'rgba(255,255,255,0.1)',
+                          color: '#fff',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Quota Warning */}
@@ -2681,14 +2706,20 @@ function PostSection({
             {/* Platform Badge */}
             <div style={{ marginBottom: '12px' }}>
               <span style={{
-                background: platform === 'tiktok' ? '#fe2c55' : '#E1306C',
+                background: platform === 'instagram' ? '#E1306C' :
+                           platform === 'facebook' ? '#1877F2' :
+                           platform === 'twitter' ? '#1DA1F2' :
+                           platform === 'gmb' ? '#4285F4' : '#fe2c55',
                 padding: '6px 12px',
                 borderRadius: '6px',
                 fontSize: '13px',
                 fontWeight: 600,
                 textTransform: 'capitalize',
               }}>
-                {platform === 'tiktok' ? '🎵 TikTok' : '📷 Instagram'}
+                {platform === 'instagram' ? '📷 Instagram' :
+                 platform === 'facebook' ? '👍 Facebook' :
+                 platform === 'twitter' ? '🐦 X/Twitter' :
+                 platform === 'gmb' ? '📍 GMB' : '🎵 TikTok'}
               </span>
             </div>
 
