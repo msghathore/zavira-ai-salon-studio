@@ -178,22 +178,29 @@ export default function App() {
     setIsPosting(true);
     setPostStatuses(selectedPlatforms.map(p => ({ platform: p, status: 'pending' })));
 
-    // Upload video to Supabase first
+    // Upload video to catbox.moe (free file hosting, keeps for 1 year)
     let publicVideoUrl = videoUrl;
-    if (videoBlob && isSupabaseConfigured()) {
+    if (videoBlob) {
       try {
-        const timestamp = Date.now();
-        const filename = `${userId}/${timestamp}-video.mp4`;
-        const { error } = await supabase.storage
-          .from('videos')
-          .upload(filename, videoBlob, { contentType: 'video/mp4' });
+        const formData = new FormData();
+        formData.append('reqtype', 'fileupload');
+        formData.append('fileToUpload', videoBlob, `zavira-${Date.now()}.mp4`);
 
-        if (!error) {
-          const { data } = supabase.storage.from('videos').getPublicUrl(filename);
-          publicVideoUrl = data.publicUrl;
+        const uploadResponse = await fetch('https://catbox.moe/user/api.php', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const uploadedUrl = await uploadResponse.text();
+        if (uploadedUrl && uploadedUrl.startsWith('https://')) {
+          publicVideoUrl = uploadedUrl;
+          console.log('Video uploaded to:', publicVideoUrl);
+        } else {
+          console.warn('Catbox upload failed, using blob URL (may not work)');
         }
       } catch (e) {
         console.error('Failed to upload video:', e);
+        console.warn('Using blob URL (may not work with webhooks)');
       }
     }
 
