@@ -29,15 +29,20 @@ export async function initFFmpeg(onProgress?: (progress: number) => void): Promi
     }
   });
 
-  // Load FFmpeg core from CDN
-  const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+  // Load FFmpeg core from CDN (use jsdelivr as it's more reliable)
+  const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
 
-  await ffmpeg.load({
-    coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-    wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-  });
-
-  isLoaded = true;
+  try {
+    await ffmpeg.load({
+      coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+      wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+    });
+    isLoaded = true;
+    console.log('FFmpeg loaded successfully');
+  } catch (error) {
+    console.error('FFmpeg load error:', error);
+    throw new Error('Failed to load FFmpeg. Please check your internet connection and try again.');
+  }
 }
 
 // Convert data URL to Uint8Array
